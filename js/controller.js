@@ -1,3 +1,44 @@
+// Game constants
+const CONFETTI_COUNT = 100;
+const BALLOON_COUNT = 15;
+const CONFETTI_MIN_SIZE = 5;
+const CONFETTI_MAX_SIZE = 15;
+const CONFETTI_MIN_OPACITY = 0.5;
+const CONFETTI_MAX_OPACITY = 1.0;
+const CONFETTI_CLEANUP_DELAY = 5000;
+const CONFETTI_FADE_DELAY = 1000;
+const CELEBRATION_CONFETTI_DELAY = 300;
+
+// Animation timing constants
+const BALLOON_MIN_DURATION = 8;
+const BALLOON_MAX_DURATION = 13;
+const BALLOON_MIN_DELAY = 0;
+const BALLOON_MAX_DELAY = 3;
+
+// Colors arrays
+const BALLOON_COLORS = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ffeead"];
+const CONFETTI_COLORS = [
+  "#ff0000",
+  "#00ff00",
+  "#0000ff",
+  "#ffff00",
+  "#ff00ff",
+  "#00ffff",
+  "#ff8800",
+  "#88ff00",
+];
+
+// Audio URLs
+const AUDIO_URLS = {
+  MOVE:
+    "https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3",
+  WIN: "https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3",
+  WALL:
+    "https://assets.mixkit.co/sfx/preview/mixkit-game-show-buzz-in-3090.mp3",
+  SWITCH:
+    "https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3",
+};
+
 // Game control and user input handling
 let steps = 0;
 let is3DMode = false;
@@ -5,18 +46,10 @@ let isMuted = false;
 let isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
 // Audio elements
-const moveSound = new Audio(
-  "https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3"
-);
-const winSound = new Audio(
-  "https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3"
-);
-const wallSound = new Audio(
-  "https://assets.mixkit.co/sfx/preview/mixkit-game-show-buzz-in-3090.mp3"
-);
-const switchSound = new Audio(
-  "https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3"
-);
+const moveSound = new Audio(AUDIO_URLS.MOVE);
+const winSound = new Audio(AUDIO_URLS.WIN);
+const wallSound = new Audio(AUDIO_URLS.WALL);
+const switchSound = new Audio(AUDIO_URLS.SWITCH);
 
 // Initialize the game
 function initGame() {
@@ -118,31 +151,23 @@ function createCelebration() {
   // Create balloons
   const balloonsContainer = celebrationElement.querySelector(".balloons");
   balloonsContainer.innerHTML = "";
-  const balloonColors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ffeead"];
+  const balloonColors = BALLOON_COLORS;
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < BALLOON_COUNT; i++) {
     const balloon = document.createElement("div");
     balloon.className = "balloon";
     balloon.style.backgroundColor =
       balloonColors[Math.floor(Math.random() * balloonColors.length)];
     balloon.style.left = Math.random() * 100 + "%";
-    balloon.style.animationDelay = Math.random() * 3 + "s";
-    balloon.style.animationDuration = Math.random() * 5 + 8 + "s";
+    balloon.style.animationDelay = Math.random() * BALLOON_MAX_DELAY + "s";
+    balloon.style.animationDuration =
+      Math.random() * BALLOON_MAX_DURATION + BALLOON_MIN_DURATION + "s";
     balloonsContainer.appendChild(balloon);
   }
 
   // Create confetti with a slight delay to ensure DOM is ready
   setTimeout(() => {
-    const colors = [
-      "#ff0000",
-      "#00ff00",
-      "#0000ff",
-      "#ffff00",
-      "#ff00ff",
-      "#00ffff",
-      "#ff8800",
-      "#88ff00",
-    ];
+    const colors = CONFETTI_COLORS;
 
     // Create container for confetti if it doesn't exist
     let confettiContainer = document.getElementById("confetti-container");
@@ -162,15 +187,18 @@ function createCelebration() {
     }
 
     // Create confetti pieces
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < CONFETTI_COUNT; i++) {
       const confetti = document.createElement("div");
       confetti.className = "confetti";
       confetti.style.backgroundColor =
         colors[Math.floor(Math.random() * colors.length)];
       confetti.style.left = Math.random() * 100 + "%";
-      confetti.style.width = Math.random() * 10 + 5 + "px";
-      confetti.style.height = Math.random() * 10 + 5 + "px";
-      confetti.style.opacity = Math.random() * 0.5 + 0.5;
+      confetti.style.width =
+        Math.random() * CONFETTI_MAX_SIZE + CONFETTI_MIN_SIZE + "px";
+      confetti.style.height =
+        Math.random() * CONFETTI_MAX_SIZE + CONFETTI_MIN_SIZE + "px";
+      confetti.style.opacity =
+        Math.random() * CONFETTI_MAX_OPACITY + CONFETTI_MIN_OPACITY;
       confetti.style.animationDelay = Math.random() * 2 + "s";
       confetti.style.animationDuration = Math.random() * 3 + 2 + "s";
 
@@ -189,10 +217,10 @@ function createCelebration() {
         el.style.transition = "opacity 1s ease-out";
         el.style.opacity = "0";
 
-        setTimeout(() => el.remove(), 1000);
+        setTimeout(() => el.remove(), CONFETTI_FADE_DELAY);
       });
-    }, 5000);
-  }, 300); // Delay confetti slightly after celebration appears
+    }, CONFETTI_CLEANUP_DELAY);
+  }, CELEBRATION_CONFETTI_DELAY); // Delay confetti slightly after celebration appears
 }
 
 // Show celebration when player wins - now uses the unified function

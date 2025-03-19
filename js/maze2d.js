@@ -1,10 +1,17 @@
-// Maze 2D rendering and logic
-let maze = [];
-let mazeWidth = 8;
-let mazeHeight = 8;
-let cellSize = 30;
-let playerSize = 20; // Size of the player icon
-let playerPosition = { x: 0, y: 0 };
+// Constants for 2D maze
+const DEFAULT_MAZE_WIDTH = 8;
+const DEFAULT_MAZE_HEIGHT = 8;
+const DEFAULT_CELL_SIZE = 30;
+const DEFAULT_PLAYER_SIZE = 20;
+const WALL_WIDTH = 2;
+const START_POSITION = { x: 0, y: 0 };
+
+// Initialize with constants
+let mazeWidth = DEFAULT_MAZE_WIDTH;
+let mazeHeight = DEFAULT_MAZE_HEIGHT;
+let cellSize = DEFAULT_CELL_SIZE;
+let playerSize = DEFAULT_PLAYER_SIZE;
+let playerPosition = { ...START_POSITION };
 let finishPosition = { x: mazeWidth - 1, y: mazeHeight - 1 };
 
 // Generate a random maze using a simple algorithm
@@ -84,7 +91,7 @@ function renderMaze() {
         const wall = document.createElement("div");
         wall.className = "wall";
         wall.style.width = `${cellSize}px`;
-        wall.style.height = "2px";
+        wall.style.height = `${WALL_WIDTH}px`;
         wall.style.left = `${x * cellSize}px`;
         wall.style.top = `${y * cellSize}px`;
         mazeElement.appendChild(wall);
@@ -93,7 +100,7 @@ function renderMaze() {
       if (cell.left) {
         const wall = document.createElement("div");
         wall.className = "wall";
-        wall.style.width = "2px";
+        wall.style.width = `${WALL_WIDTH}px`;
         wall.style.height = `${cellSize}px`;
         wall.style.left = `${x * cellSize}px`;
         wall.style.top = `${y * cellSize}px`;
@@ -103,7 +110,7 @@ function renderMaze() {
       if (x === mazeWidth - 1 && cell.right) {
         const wall = document.createElement("div");
         wall.className = "wall";
-        wall.style.width = "2px";
+        wall.style.width = `${WALL_WIDTH}px`;
         wall.style.height = `${cellSize}px`;
         wall.style.left = `${(x + 1) * cellSize}px`;
         wall.style.top = `${y * cellSize}px`;
@@ -114,7 +121,7 @@ function renderMaze() {
         const wall = document.createElement("div");
         wall.className = "wall";
         wall.style.width = `${cellSize}px`;
-        wall.style.height = "2px";
+        wall.style.height = `${WALL_WIDTH}px`;
         wall.style.left = `${x * cellSize}px`;
         wall.style.top = `${(y + 1) * cellSize}px`;
         mazeElement.appendChild(wall);
