@@ -143,30 +143,41 @@ button:active {
 
 .celebration-content {
   background-color: white;
-  padding: 30px;
-  border-radius: 15px;
+  padding: 40px;
+  border-radius: 20px;
   text-align: center;
   position: relative;
   overflow: hidden;
+  width: 90%;
+  max-width: 500px; /* Increased from default size */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .celebration-content h2 {
   color: #ff6b6b;
-  font-size: 32px;
-  margin-bottom: 10px;
+  font-size: 40px; /* Increased font size */
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.2);
+  position: relative;
+  z-index: 2; /* Ensure text is above balloons */
 }
 
 .celebration-content p {
-  font-size: 20px;
+  font-size: 24px; /* Increased font size */
   margin-bottom: 20px;
+  position: relative;
+  z-index: 2; /* Ensure text is above balloons */
 }
 
 #play-again {
-  width: 150px;
+  width: 180px; /* Made button larger */
+  height: 60px; /* Taller button */
   border-radius: 30px;
-  margin: 20px auto;
-  font-size: 18px;
+  margin: 25px auto;
+  font-size: 20px;
   background-color: #00b894;
+  position: relative;
+  z-index: 3; /* Higher z-index to be above balloons */
 }
 
 .balloons {
@@ -176,6 +187,7 @@ button:active {
   right: 0;
   bottom: 0;
   pointer-events: none;
+  z-index: 1; /* Lower z-index so balloons stay behind other content */
 }
 
 .balloon {
@@ -183,18 +195,224 @@ button:active {
   width: 30px;
   height: 40px;
   border-radius: 50%;
-  animation: float 5s ease-in-out infinite;
+  animation: float 10s ease-in-out infinite;
+  bottom: -40px; /* Start balloons off-screen at the bottom */
 }
 
 @keyframes float {
   0% {
-    transform: translateY(100vh) scale(1);
+    transform: translateY(0) scale(1); /* Start from bottom (0 movement) */
+    opacity: 1;
   }
   100% {
-    transform: translateY(-100vh) scale(1.2);
+    transform: translateY(-110vh) scale(1.2); /* Move upward */
+    opacity: 0.7;
   }
 }
 
 .hidden {
   display: none;
+}
+
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+#mode-switch,
+#mute-button {
+  width: auto;
+  height: 40px;
+  border-radius: 20px;
+  padding: 0 15px;
+  margin: 0 5px;
+  background-color: #6c5ce7;
+  font-size: 16px;
+}
+
+#maze3d {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #333;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Touch controls for iPad */
+#joystick-container {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+#joystick-base {
+  width: 120px;
+  height: 120px;
+  border-radius: 60px;
+  background-color: rgba(108, 92, 231, 0.3);
+  position: relative;
+}
+
+#joystick-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background-color: rgba(108, 92, 231, 0.7);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 3D Camera Controls */
+.camera-controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+}
+
+.camera-row {
+  display: flex;
+  justify-content: center;
+  margin: 5px 0;
+}
+
+.camera-button {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(108, 92, 231, 0.8);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  margin: 0 5px;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.camera-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.camera-reset {
+  width: 60px;
+  height: 30px;
+  background-color: rgba(255, 107, 107, 0.8);
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  margin-top: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Camera hint for touch gestures */
+.camera-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: 30;
+  opacity: 0.8;
+  pointer-events: none;
+  animation: fadeOut 3s forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Device-specific adjustments */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 10px;
+  }
+
+  button {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .horizontal-controls {
+    gap: 30px;
+  }
+
+  .camera-controls {
+    bottom: 80px; /* Position above movement controls on mobile */
+  }
+
+  .camera-button {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+}
+
+@media (orientation: landscape) {
+  .camera-controls {
+    right: 20px;
+    bottom: 20px;
+  }
+}
+
+/* Portrait orientation on iPad */
+@media (orientation: portrait) and (min-width: 768px) {
+  .controls {
+    margin-top: 30px;
+  }
+
+  button {
+    width: 70px;
+    height: 70px;
+    margin: 8px;
+  }
+
+  .camera-controls {
+    bottom: 30px;
+    right: 20px;
+  }
+
+  .camera-button {
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+  }
+
+  .camera-reset {
+    width: 80px;
+    height: 40px;
+    font-size: 16px;
+  }
 }
