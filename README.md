@@ -7,7 +7,7 @@ This game was created to celebrate Robin's birthday! It's a fun maze game that o
 - Challenging maze gameplay
 - Toggle between 2D and 3D viewing modes
   - 2D mode: Classic top-down maze view
-  - 3D mode: Immersive first-person perspective
+  - 3D mode: Top-down perspective with adjustable tilt angle
 - Full iPad and touch device support
 - Engaging sound effects
 - Celebratory end screen when you complete the maze
@@ -26,12 +26,13 @@ This game was created to celebrate Robin's birthday! It's a fun maze game that o
 - Use arrow keys or WASD to move through the maze
 - Toggle between 2D and 3D modes with the mode switch button
 - In 3D mode:
-  - Look around using the mouse
+  - Adjust the tilt angle using the controls
   - Move forward/backward with W/S or Up/Down arrows
   - Strafe left/right with A/D or Left/Right arrows
+  - The maze is centered in view and surrounded by walls
 - On iPad/touch devices:
   - Use on-screen directional pad to navigate
-  - Swipe to look around in 3D mode
+  - Use pinch and zoom gestures to adjust the tilt in 3D mode
   - Tap the mode button to switch between 2D and 3D
   - Use two fingers to pinch zoom in 2D mode
 - Sound can be muted or adjusted through the in-game controls
@@ -43,6 +44,12 @@ This game was created to celebrate Robin's birthday! It's a fun maze game that o
 - Touch-enabled screen for iPad/tablet play
 - Recommended: Chrome, Firefox, or Edge for the best performance
 - For iPad: iOS 13+ recommended for optimal experience
+
+## Project Structure
+
+- All JavaScript files are organized in the `/js` folder
+- Files are designed for direct browser execution without using export statements
+- This ensures the game can be run locally by simply opening the HTML file
 
 ## Credits
 

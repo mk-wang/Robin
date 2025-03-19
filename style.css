@@ -199,6 +199,37 @@ button:active {
   bottom: -40px; /* Start balloons off-screen at the bottom */
 }
 
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  animation: confetti-fall 5s ease-in-out forwards;
+  transform-origin: center;
+  opacity: 0;
+  top: -20px; /* Start above the visible area */
+}
+
+#celebration .confetti {
+  display: block;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-5vh) rotate(0deg);
+    opacity: 1;
+  }
+  10% {
+    opacity: 1; /* Ensure opacity is 1 for most of the animation */
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
 @keyframes float {
   0% {
     transform: translateY(0) scale(1); /* Start from bottom (0 movement) */
@@ -238,34 +269,6 @@ button:active {
   position: absolute;
   top: 0;
   left: 0;
-}
-
-/* Touch controls for iPad */
-#joystick-container {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-}
-
-#joystick-base {
-  width: 120px;
-  height: 120px;
-  border-radius: 60px;
-  background-color: rgba(108, 92, 231, 0.3);
-  position: relative;
-}
-
-#joystick-thumb {
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
-  background-color: rgba(108, 92, 231, 0.7);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 /* 3D Camera Controls */
