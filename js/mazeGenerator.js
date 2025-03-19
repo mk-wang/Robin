@@ -1,9 +1,13 @@
 // Maze data and state
 let maze = [];
-let mazeWidth = 8;
-let mazeHeight = 8;
+let mazeWidth = 4; // Default width
+let mazeHeight = 2; // Default height
 let playerPosition = { x: 0, y: 0 };
 let finishPosition = { x: 7, y: 7 };
+
+// Size constraint constants
+const MAZE_MIN_SIZE = 2;
+const MAZE_MAX_SIZE = 20;
 
 // Generate maze using recursive backtracking
 function generateMaze() {
@@ -125,4 +129,6 @@ window.MazeData = {
   resizeMaze,
   movePlayer,
   isAtFinish,
+  MIN_SIZE: MAZE_MIN_SIZE,
+  MAX_SIZE: MAZE_MAX_SIZE,
 };

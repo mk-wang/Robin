@@ -1,8 +1,3 @@
-// Size constraint constants
-const MAZE_MIN_SIZE = 2;
-const MAZE_MAX_SIZE = 20;
-const MAZE_DEFAULT_SIZE = 8;
-
 // Game constants
 const CONFETTI_COUNT = 100;
 const BALLOON_COUNT = 15;
@@ -300,9 +295,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Set input fields with min, max and default values
   [widthInput, heightInput].forEach((input) => {
-    input.min = MAZE_MIN_SIZE;
-    input.max = MAZE_MAX_SIZE;
-    input.value = MAZE_DEFAULT_SIZE;
+    input.min = MazeData.MIN_SIZE;
+    input.max = MazeData.MAX_SIZE;
+    if (input === widthInput) {
+      input.value = MazeData.getWidth();
+    } else {
+      input.value = MazeData.getHeight();
+    }
   });
 
   // Initialize game and set up event handlers
@@ -324,12 +323,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Settings control
   applySettingsButton.addEventListener("click", () => {
     const newWidth = Math.min(
-      Math.max(parseInt(widthInput.value) || MAZE_DEFAULT_SIZE, MAZE_MIN_SIZE),
-      MAZE_MAX_SIZE
+      Math.max(
+        parseInt(widthInput.value) || MazeData.getWidth(),
+        MazeData.MIN_SIZE
+      ),
+      MazeData.MAX_SIZE
     );
     const newHeight = Math.min(
-      Math.max(parseInt(heightInput.value) || MAZE_DEFAULT_SIZE, MAZE_MIN_SIZE),
-      MAZE_MAX_SIZE
+      Math.max(
+        parseInt(heightInput.value) || MazeData.getHeight(),
+        MazeData.MIN_SIZE
+      ),
+      MazeData.MAX_SIZE
     );
 
     widthInput.value = newWidth;
