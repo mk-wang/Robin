@@ -8,7 +8,7 @@ const FLOOR_OFFSET = -0.5;
 const CAMERA_MIN_ANGLE = 0.1;
 const CAMERA_MAX_ANGLE = Math.PI / 2 - 0.1;
 const CAMERA_MIN_DISTANCE = 10;
-const CAMERA_MAX_DISTANCE = 100;
+const CAMERA_MAX_DISTANCE = 200;
 const CAMERA_ZOOM_STEP = 2;
 const CAMERA_ANGLE_SENSITIVITY = 0.005;
 const PLAYER_BOUNCE_SPEED = 0.005;
@@ -20,6 +20,8 @@ const STAR_POINTS = 10;
 const STAR_DEPTH = 0.2;
 const STAR_HEIGHT = 5;
 const STAR_ROTATION_SPEED = 0.01;
+const FLOATING_CONTROLS_SIZE = "60px";
+const FLOATING_CONTROLS_MARGIN = "10px";
 
 // Light settings
 const AMBIENT_LIGHT_INTENSITY = 0.6;
@@ -39,6 +41,11 @@ const WALL_COLOR = 0x6c5ce7;
 const OUTER_WALL_COLOR = 0xee3394;
 const PLAYER_COLOR = 0xff6b6b;
 const FINISH_COLOR = 0xffd700;
+const CONTROLS_BG_COLOR = "rgba(0, 0, 0, 0.3)";
+const CONTROLS_HOVER_COLOR = "rgba(0, 0, 0, 0.5)";
+
+let isFullscreen = false;
+let floatingControls = null;
 
 // Maze 3D rendering using Three.js
 let scene, camera, renderer;
@@ -124,6 +131,16 @@ function init3DMaze() {
   if (isTouchDevice) {
     setupTouchControls();
   }
+
+  // Create floating controls
+  createFloatingControls();
+
+  // Create fullscreen button
+  const fullscreenBtn = document.createElement("button");
+  fullscreenBtn.className = "fullscreen-btn";
+  fullscreenBtn.innerHTML = "⛶";
+  fullscreenBtn.addEventListener("click", toggleFullscreen);
+  container.appendChild(fullscreenBtn);
 
   // Start animation loop
   animate();
@@ -449,16 +466,16 @@ document.addEventListener("keydown", (e) => {
 
   switch (e.key) {
     case "ArrowLeft":
-      movePlayer("left");
+      movePlayer(Direction.LEFT);
       break;
     case "ArrowRight":
-      movePlayer("right");
+      movePlayer(Direction.RIGHT);
       break;
     case "ArrowUp":
-      movePlayer("up");
+      movePlayer(Direction.UP);
       break;
     case "ArrowDown":
-      movePlayer("down");
+      movePlayer(Direction.DOWN);
       break;
     case "+":
     case "=":
@@ -512,4 +529,47 @@ function switchTo2DView() {
   // Ensure the 2D view is synchronized with the 3D position
   renderMaze();
   updatePlayerPosition();
+}
+
+function createFloatingControls() {
+  floatingControls = document.createElement("div");
+  floatingControls.className = "floating-controls";
+  floatingControls.style.display = "none";
+
+  const directions = [
+    Direction.UP,
+    Direction.DOWN,
+    Direction.LEFT,
+    Direction.RIGHT,
+  ];
+  directions.forEach((dir) => {
+    const button = document.createElement("button");
+    button.className = `control-btn ${dir}`;
+    button.innerHTML = `<span class="arrow-${dir}"></span>`;
+    button.addEventListener("click", () => movePlayer(dir));
+    floatingControls.appendChild(button);
+  });
+
+  document.getElementById("maze3d").appendChild(floatingControls);
+}
+
+function toggleFullscreen() {
+  const maze3dContainer = document.getElementById("maze3d");
+  isFullscreen = !isFullscreen;
+
+  if (isFullscreen) {
+    maze3dContainer.classList.add("fullscreen");
+    floatingControls.style.display = "grid";
+    if (maze3dContainer.requestFullscreen) {
+      maze3dContainer.requestFullscreen();
+    }
+  } else {
+    maze3dContainer.classList.remove("fullscreen");
+    floatingControls.style.display = "none";
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+
+  handle3DResize();
 }

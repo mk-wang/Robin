@@ -140,3 +140,37 @@ function updatePlayerPosition() {
     playerPosition.y * cellSize + (cellSize - playerSize) / 2
   }px`;
 }
+
+// 添加重置迷宫尺寸的函数
+function resizeMaze(width, height) {
+  mazeWidth = width;
+  mazeHeight = height;
+
+  // 根据新尺寸调整单元格大小
+  const maxWidth = Math.min(window.innerWidth * 0.9, 800);
+  const maxHeight = window.innerHeight * 0.6;
+
+  cellSize = Math.min(
+    Math.floor(maxWidth / mazeWidth),
+    Math.floor(maxHeight / mazeHeight),
+    DEFAULT_CELL_SIZE
+  );
+
+  // 调整玩家大小
+  playerSize = Math.min(cellSize * 0.8, DEFAULT_PLAYER_SIZE);
+
+  // 更新迷宫容器尺寸
+  const mazeContainer = document.querySelector(".maze-container");
+  const mazeElement = document.getElementById("maze");
+
+  const totalWidth = mazeWidth * cellSize;
+  const totalHeight = mazeHeight * cellSize;
+
+  mazeContainer.style.width = `${totalWidth}px`;
+  mazeContainer.style.height = `${totalHeight}px`;
+  mazeElement.style.width = `${totalWidth}px`;
+  mazeElement.style.height = `${totalHeight}px`;
+
+  // 重新初始化游戏
+  initGame();
+}

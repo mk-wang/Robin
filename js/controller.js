@@ -1,3 +1,8 @@
+// Size constraint constants
+const MAZE_MIN_SIZE = 2;
+const MAZE_MAX_SIZE = 20;
+const MAZE_DEFAULT_SIZE = 8;
+
 // Game constants
 const CONFETTI_COUNT = 100;
 const BALLOON_COUNT = 15;
@@ -41,15 +46,25 @@ const AUDIO_URLS = {
 
 // Game control and user input handling
 let steps = 0;
-let is3DMode = false;
 let isMuted = false;
 let isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+const default3D = true;
+let is3DMode = false;
 
 // Audio elements
 const moveSound = new Audio(AUDIO_URLS.MOVE);
 const winSound = new Audio(AUDIO_URLS.WIN);
 const wallSound = new Audio(AUDIO_URLS.WALL);
 const switchSound = new Audio(AUDIO_URLS.SWITCH);
+
+// Add direction enum
+const Direction = {
+  LEFT: "left",
+  RIGHT: "right",
+  UP: "up",
+  DOWN: "down",
+};
 
 // Initialize the game
 function initGame() {
@@ -83,14 +98,31 @@ function initGame() {
   const confettiElements = document.querySelectorAll(".confetti");
   confettiElements.forEach((el) => el.remove());
 
-  // If in 3D mode, re-initialize the 3D scene
-  if (is3DMode) {
-    init3DMaze();
+  if (default3D && !is3DMode) {
+    switchMode();
   }
 }
 
 // Handle player movement
-function movePlayer(dx, dy) {
+function movePlayer(direction) {
+  let dx = 0,
+    dy = 0;
+
+  switch (direction) {
+    case Direction.LEFT:
+      dx = -1;
+      break;
+    case Direction.RIGHT:
+      dx = 1;
+      break;
+    case Direction.UP:
+      dy = -1;
+      break;
+    case Direction.DOWN:
+      dy = 1;
+      break;
+  }
+
   const newX = playerPosition.x + dx;
   const newY = playerPosition.y + dy;
 
@@ -261,11 +293,25 @@ function toggleMute() {
 
 // Setup event listeners
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize maze dimensions
+  mazeWidth = MAZE_DEFAULT_SIZE; // Using existing variable from maze2d.js
+  mazeHeight = MAZE_DEFAULT_SIZE; // Using existing variable from maze2d.js
+
   const mazeElement = document.getElementById("maze");
   const playAgainButton = document.getElementById("play-again");
   const newGameButton = document.getElementById("new-game");
   const modeSwitchButton = document.getElementById("mode-switch");
   const muteButton = document.getElementById("mute-button");
+  const applySettingsButton = document.getElementById("apply-settings");
+  const widthInput = document.getElementById("maze-width");
+  const heightInput = document.getElementById("maze-height");
+
+  // 设置输入框的最小值、最大值和默认值
+  [widthInput, heightInput].forEach((input) => {
+    input.min = MAZE_MIN_SIZE;
+    input.max = MAZE_MAX_SIZE;
+    input.value = MAZE_DEFAULT_SIZE;
+  });
 
   // Set initial size of maze container
   mazeElement.style.width = `${mazeWidth * cellSize}px`;
@@ -274,46 +320,58 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize the game
   initGame();
 
-  // Button event listeners
-  document
-    .getElementById("up")
-    .addEventListener("click", () => movePlayer(0, -1));
-  document
-    .getElementById("down")
-    .addEventListener("click", () => movePlayer(0, 1));
-  document
-    .getElementById("left")
-    .addEventListener("click", () => movePlayer(-1, 0));
-  document
-    .getElementById("right")
-    .addEventListener("click", () => movePlayer(1, 0));
   newGameButton.addEventListener("click", initGame);
   playAgainButton.addEventListener("click", initGame);
   modeSwitchButton.addEventListener("click", switchMode);
   muteButton.addEventListener("click", toggleMute);
 
+  // Settings control
+  applySettingsButton.addEventListener("click", () => {
+    const newWidth = Math.min(
+      Math.max(parseInt(widthInput.value) || MAZE_DEFAULT_SIZE, MAZE_MIN_SIZE),
+      MAZE_MAX_SIZE
+    );
+    const newHeight = Math.min(
+      Math.max(parseInt(heightInput.value) || MAZE_DEFAULT_SIZE, MAZE_MIN_SIZE),
+      MAZE_MAX_SIZE
+    );
+
+    widthInput.value = newWidth;
+    heightInput.value = newHeight;
+
+    resizeMaze(newWidth, newHeight);
+    if (is3DMode) {
+      init3DMaze();
+    }
+  });
+
   // Keyboard controls
   document.addEventListener("keydown", (e) => {
+    if (is3DMode) {
+      // Let maze3d.js handle the movement in 3D mode
+      return;
+    }
+
     switch (e.key) {
       case "ArrowUp":
       case "w":
       case "W":
-        movePlayer(0, -1);
+        movePlayer(Direction.UP);
         break;
       case "ArrowDown":
       case "s":
       case "S":
-        movePlayer(0, 1);
+        movePlayer(Direction.DOWN);
         break;
       case "ArrowLeft":
       case "a":
       case "A":
-        movePlayer(-1, 0);
+        movePlayer(Direction.LEFT);
         break;
       case "ArrowRight":
       case "d":
       case "D":
-        movePlayer(1, 0);
+        movePlayer(Direction.RIGHT);
         break;
     }
   });
