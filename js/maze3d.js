@@ -133,7 +133,7 @@ function init3DMaze() {
   }
 
   // Create floating controls
-  createFloatingControls();
+  createFloatingControls("maze3d");
 
   // Create fullscreen button
   const fullscreenBtn = document.createElement("button");

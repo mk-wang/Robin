@@ -51,6 +51,7 @@ let isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
 const default3D = true;
 let is3DMode = false;
+let gameInited = false;
 
 // Audio elements
 const moveSound = new Audio(AUDIO_URLS.MOVE);
@@ -98,9 +99,10 @@ function initGame() {
   const confettiElements = document.querySelectorAll(".confetti");
   confettiElements.forEach((el) => el.remove());
 
-  if (default3D && !is3DMode) {
+  if (!gameInited && default3D && !is3DMode) {
     switchMode();
   }
+  gameInited = true;
 }
 
 // Handle player movement
@@ -269,7 +271,7 @@ function switchMode() {
   const modeSwitchButton = document.getElementById("mode-switch");
 
   is3DMode = !is3DMode;
-  if (!isMuted) switchSound.play();
+  if (!isMuted && gameInited) switchSound.play();
 
   if (is3DMode) {
     modeSwitchButton.textContent = "3D Mode";
@@ -383,3 +385,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+function createFloatingControls(container) {
+  let dirControls = document.createElement("div");
+  dirControls.className = "floating-controls";
+  dirControls.style.display = "none";
+
+  const directions = [
+    Direction.UP,
+    Direction.DOWN,
+    Direction.LEFT,
+    Direction.RIGHT,
+  ];
+  directions.forEach((dir) => {
+    const button = document.createElement("button");
+    button.className = `control-btn ${dir}`;
+    button.innerHTML = `<span class="arrow-${dir}"></span>`;
+    button.addEventListener("click", () => movePlayer(dir));
+    dirControls.appendChild(button);
+  });
+
+  document.getElementById(container).appendChild(dirControls);
+  return dirControls;
+}
