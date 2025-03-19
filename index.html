@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Birthday Maze Game</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="header">
+        <h1>Happy Birthday Maze Game!</h1>
+        <div class="score">Steps: <span id="steps">0</span></div>
+      </div>
+      <div class="maze-container">
+        <div id="maze"></div>
+        <div id="player"></div>
+        <div id="finish"></div>
+      </div>
+      <div class="controls">
+        <button id="up">⬆️</button>
+        <div class="horizontal-controls">
+          <button id="left">⬅️</button>
+          <button id="right">➡️</button>
+        </div>
+        <button id="down">⬇️</button>
+        <button id="new-game">New Game</button>
+      </div>
+    </div>
+    <div id="celebration" class="hidden">
+      <div class="celebration-content">
+        <h2>Happy Birthday!</h2>
+        <p>You completed the maze!</p>
+        <div class="balloons"></div>
+        <button id="play-again">Play Again</button>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
