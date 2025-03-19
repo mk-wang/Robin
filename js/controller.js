@@ -73,23 +73,19 @@ function initGame() {
   const celebrationElement = document.getElementById("celebration");
   const stepsElement = document.getElementById("steps");
 
-  // Clear existing maze
   mazeElement.innerHTML = "";
   steps = 0;
   stepsElement.textContent = steps;
 
-  // Generate maze
-  generateMaze();
+  // Use MazeData for maze generation
+  MazeData.generateMaze();
 
-  // Set player position (start at top left)
-  playerPosition = { x: 0, y: 0 };
-  updatePlayerPosition();
+  // Update both views
+  Maze2D.render2DMaze();
 
-  // Set finish position (bottom right)
-  finishPosition = { x: mazeWidth - 1, y: mazeHeight - 1 };
-  const finishElement = document.getElementById("finish");
-  finishElement.style.left = `${finishPosition.x * cellSize}px`;
-  finishElement.style.top = `${finishPosition.y * cellSize}px`;
+  if (scene) {
+    create3DMaze();
+  }
 
   // Hide celebration - ensure it's completely hidden
   celebrationElement.style.display = "none";
@@ -125,47 +121,30 @@ function movePlayer(direction) {
       break;
   }
 
-  const newX = playerPosition.x + dx;
-  const newY = playerPosition.y + dy;
+  // Use MazeData's movePlayer function
+  const moveSuccessful = MazeData.movePlayer(direction, dx, dy);
 
-  // Check if the new position is within bounds
-  if (newX >= 0 && newX < mazeWidth && newY >= 0 && newY < mazeHeight) {
-    // Check if there's a wall in the way
-    const currentCell = maze[playerPosition.y][playerPosition.x];
-    if (
-      (dx === 1 && !currentCell.right) ||
-      (dx === -1 && !currentCell.left) ||
-      (dy === 1 && !currentCell.bottom) ||
-      (dy === -1 && !currentCell.top)
-    ) {
-      // Move is valid
-      if (!isMuted) moveSound.play();
-      playerPosition.x = newX;
-      playerPosition.y = newY;
-      steps++;
-      document.getElementById("steps").textContent = steps;
+  if (moveSuccessful) {
+    // Move is valid
+    if (!isMuted) moveSound.play();
+    steps++;
+    document.getElementById("steps").textContent = steps;
 
-      if (is3DMode) {
-        // Update camera position in 3D mode
-        camera.position.x = (playerPosition.x + 0.5) * 10;
-        camera.position.z = (playerPosition.y + 0.5) * 10;
-        updateCameraPosition(); // Changed from updateCameraDirection()
-      } else {
-        // Update player position in 2D mode
-        updatePlayerPosition();
-      }
-
-      // Check if player reached the finish
-      if (
-        playerPosition.x === finishPosition.x &&
-        playerPosition.y === finishPosition.y
-      ) {
-        showCelebration();
-      }
+    if (is3DMode) {
+      // Update camera position in 3D mode if needed
+      updateCameraPosition();
     } else {
-      // Hit wall
-      if (!isMuted) wallSound.play();
+      // Update player position in 2D mode
+      updatePlayerPosition();
     }
+
+    // Check if player reached the finish
+    if (MazeData.isAtFinish()) {
+      showCelebration();
+    }
+  } else {
+    // Hit wall
+    if (!isMuted) wallSound.play();
   }
 }
 
@@ -277,11 +256,25 @@ function switchMode() {
     modeSwitchButton.textContent = "3D Mode";
     playerElement.classList.add("hidden");
     finishElement.classList.add("hidden");
+
+    // When switching to 3D, ensure the 3D view is correctly initialized with current data
+    if (scene) {
+      // If scene exists, recreate it with current maze dimensions
+      create3DMaze();
+      updateCameraPosition();
+    } else {
+      // If no scene, initialize 3D maze fresh
+      init3DMaze();
+    }
+
     switchTo3DView();
   } else {
     modeSwitchButton.textContent = "2D Mode";
     playerElement.classList.remove("hidden");
     finishElement.classList.remove("hidden");
+
+    // Update 2D view before showing it
+    Maze2D.resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     switchTo2DView();
   }
 }
@@ -295,10 +288,7 @@ function toggleMute() {
 
 // Setup event listeners
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize maze dimensions
-  mazeWidth = MAZE_DEFAULT_SIZE; // Using existing variable from maze2d.js
-  mazeHeight = MAZE_DEFAULT_SIZE; // Using existing variable from maze2d.js
-
+  // Initialize maze dimensions with MazeData defaults
   const mazeElement = document.getElementById("maze");
   const playAgainButton = document.getElementById("play-again");
   const newGameButton = document.getElementById("new-game");
@@ -308,19 +298,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const widthInput = document.getElementById("maze-width");
   const heightInput = document.getElementById("maze-height");
 
-  // 设置输入框的最小值、最大值和默认值
+  // Set input fields with min, max and default values
   [widthInput, heightInput].forEach((input) => {
     input.min = MAZE_MIN_SIZE;
     input.max = MAZE_MAX_SIZE;
     input.value = MAZE_DEFAULT_SIZE;
   });
 
-  // Set initial size of maze container
-  mazeElement.style.width = `${mazeWidth * cellSize}px`;
-  mazeElement.style.height = `${mazeHeight * cellSize}px`;
-
-  // Initialize the game
+  // Initialize game and set up event handlers
   initGame();
+
+  // Set initial size once MazeData and Maze2D are initialized
+  setTimeout(() => {
+    // Get the cell size from Maze2D
+    const cellSize = Maze2D.getCellSize();
+    mazeElement.style.width = `${MazeData.getWidth() * cellSize}px`;
+    mazeElement.style.height = `${MazeData.getHeight() * cellSize}px`;
+  }, 100);
 
   newGameButton.addEventListener("click", initGame);
   playAgainButton.addEventListener("click", initGame);
@@ -341,10 +335,21 @@ document.addEventListener("DOMContentLoaded", () => {
     widthInput.value = newWidth;
     heightInput.value = newHeight;
 
-    resizeMaze(newWidth, newHeight);
+    // First resize the maze data
+    MazeData.resizeMaze(newWidth, newHeight);
+
+    // Update current view based on mode
     if (is3DMode) {
+      // Reset 3D view with new dimensions
       init3DMaze();
+    } else {
+      // Resize 2D view
+      Maze2D.resizeMaze2D(newWidth, newHeight);
     }
+
+    // Reset steps counter
+    steps = 0;
+    document.getElementById("steps").textContent = steps;
   });
 
   // Keyboard controls
@@ -381,7 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle window resize
   window.addEventListener("resize", () => {
     if (is3DMode) {
-      on3DResize();
+      handle3DResize();
+    } else {
+      // Also handle 2D maze resize when in 2D mode
+      resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     }
   });
 });

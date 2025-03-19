@@ -67,7 +67,17 @@ function init3DMaze() {
 
   // Create scene
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(SKY_COLOR); // Light blue sky color
+  scene.background = new THREE.Color(SKY_COLOR);
+
+  // Get current maze dimensions from MazeData
+  const mazeWidth = MazeData.getWidth();
+  const mazeHeight = MazeData.getHeight();
+
+  // Adjust camera distance based on maze size
+  cameraDistance = Math.max(
+    70,
+    Math.max(mazeWidth, mazeHeight) * CELL_SIZE_3D * 0.8
+  );
 
   // Create camera
   camera = new THREE.PerspectiveCamera(
@@ -106,7 +116,7 @@ function init3DMaze() {
   // Create the maze in 3D
   create3DMaze();
 
-  // Create floor
+  // Create floor - use updated dimensions
   const floorGeometry = new THREE.PlaneGeometry(
     mazeWidth * CELL_SIZE_3D + CELL_SIZE_3D,
     mazeHeight * CELL_SIZE_3D + CELL_SIZE_3D
@@ -133,7 +143,7 @@ function init3DMaze() {
   }
 
   // Create floating controls
-  createFloatingControls("maze3d");
+  floatingControls = createFloatingControls("maze3d");
 
   // Create fullscreen button
   const fullscreenBtn = document.createElement("button");
@@ -141,6 +151,9 @@ function init3DMaze() {
   fullscreenBtn.innerHTML = "⛶";
   fullscreenBtn.addEventListener("click", toggleFullscreen);
   container.appendChild(fullscreenBtn);
+
+  // Force camera and renderer update after initialization
+  handle3DResize();
 
   // Start animation loop
   animate();
@@ -156,6 +169,12 @@ function create3DMaze() {
   mazeGroup = new THREE.Group();
   scene.add(mazeGroup);
 
+  const maze = MazeData.getMaze();
+  const mazeWidth = MazeData.getWidth();
+  const mazeHeight = MazeData.getHeight();
+  const playerPos = MazeData.getPlayerPosition();
+  const finishPos = MazeData.getFinishPosition();
+
   // Wall materials
   const wallMaterial = new THREE.MeshStandardMaterial({
     color: WALL_COLOR,
@@ -170,7 +189,7 @@ function create3DMaze() {
     roughness: OUTER_WALL_ROUGHNESS,
   });
 
-  // Create walls
+  // Create walls using MazeData
   for (let y = 0; y < mazeHeight; y++) {
     for (let x = 0; x < mazeWidth; x++) {
       const cell = maze[y][x];
@@ -250,9 +269,9 @@ function create3DMaze() {
   });
   playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
   playerMesh.position.set(
-    playerPosition.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+    playerPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
     PLAYER_HEIGHT,
-    playerPosition.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+    playerPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
   );
   mazeGroup.add(playerMesh);
 
@@ -268,9 +287,9 @@ function create3DMaze() {
   });
   finishMesh = new THREE.Mesh(finishGeometry, finishMaterial);
   finishMesh.position.set(
-    finishPosition.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+    finishPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
     FINISH_POINT_HEIGHT / 2,
-    finishPosition.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+    finishPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
   );
   mazeGroup.add(finishMesh);
 
@@ -298,9 +317,9 @@ function create3DMaze() {
   const starMaterial = new THREE.MeshStandardMaterial({ color: FINISH_COLOR });
   const star = new THREE.Mesh(starGeometry, starMaterial);
   star.position.set(
-    finishPosition.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+    finishPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
     STAR_HEIGHT,
-    finishPosition.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+    finishPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
   );
   star.rotation.x = -Math.PI / 2;
   mazeGroup.add(star);
@@ -312,8 +331,10 @@ function animate() {
 
   // Update player position in 3D
   if (playerMesh) {
-    playerMesh.position.x = playerPosition.x * CELL_SIZE_3D + CELL_SIZE_3D / 2;
-    playerMesh.position.z = playerPosition.y * CELL_SIZE_3D + CELL_SIZE_3D / 2;
+    const playerPos = MazeData.getPlayerPosition();
+
+    playerMesh.position.x = playerPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2;
+    playerMesh.position.z = playerPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2;
 
     // Add a small bouncing animation to the player
     playerMesh.position.y =
@@ -324,10 +345,7 @@ function animate() {
     updateCameraPosition();
 
     // Check if player has reached the finish point
-    if (
-      playerPosition.x === finishPosition.x &&
-      playerPosition.y === finishPosition.y
-    ) {
+    if (MazeData.isAtFinish()) {
       // Show celebration directly without relying on 2D function
       playerMesh = null; // Remove player mesh to avoid further updates
       showCelebration();
@@ -356,6 +374,9 @@ function showCelebration() {
 
 // Update camera position based on current angle and distance
 function updateCameraPosition() {
+  const mazeWidth = MazeData.getWidth();
+  const mazeHeight = MazeData.getHeight();
+
   const centerX = (mazeWidth * CELL_SIZE_3D) / 2;
   const centerZ = (mazeHeight * CELL_SIZE_3D) / 2;
 
@@ -367,13 +388,21 @@ function updateCameraPosition() {
   camera.lookAt(centerX, 0, centerZ);
 }
 
-// Handle window resize
+// Handle window resize with more robust handling
 function handle3DResize() {
   if (camera && renderer) {
     const container = document.getElementById("maze3d");
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+
+    // Get dimensions that account for any parent container sizing
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    if (width > 0 && height > 0) {
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+      renderer.render(scene, camera);
+    }
   }
 }
 
@@ -504,32 +533,30 @@ function switchTo3DView() {
   document.getElementById("maze").style.display = "none";
   document.getElementById("maze3d").style.display = "block";
 
-  // Initialize 3D maze if not already done
-  if (!scene) {
-    init3DMaze();
-  } else {
-    // Update the camera and maze if already initialized
-    updateCameraPosition();
-    create3DMaze();
-  }
-
-  // Make sure to update the player position in 3D
-  if (playerMesh) {
-    playerMesh.position.x = playerPosition.x * CELL_SIZE_3D + CELL_SIZE_3D / 2;
-    playerMesh.position.z = playerPosition.y * CELL_SIZE_3D + CELL_SIZE_3D / 2;
-  }
+  // Force a resize to update renderer dimensions
+  setTimeout(() => {
+    handle3DResize();
+  }, 50);
 }
 
-// Add this function to support switching to 2D view
+// Switch to 2D view
 function switchTo2DView() {
   view = "2d";
   document.getElementById("maze3d").style.display = "none";
   document.getElementById("maze").style.display = "block";
 
-  // Ensure the 2D view is synchronized with the 3D position
-  renderMaze();
-  updatePlayerPosition();
+  // Make sure the 2D view is up-to-date
+  Maze2D.render2DMaze();
 }
+
+// Make these functions available to other modules
+window.Maze3D = {
+  init3DMaze,
+  create3DMaze,
+  switchTo3DView,
+  switchTo2DView,
+  handle3DResize,
+};
 
 function createFloatingControls() {
   floatingControls = document.createElement("div");
