@@ -22,6 +22,18 @@ const STAR_HEIGHT = 5;
 const STAR_ROTATION_SPEED = 0.01;
 const FLOATING_CONTROLS_SIZE = "60px";
 const FLOATING_CONTROLS_MARGIN = "10px";
+// New constants for custom fullscreen mode
+const CUSTOM_FULLSCREEN_Z_INDEX = 1000;
+const CELEBRATION_Z_INDEX = 2000; // New constant for celebration z-index
+const FULLSCREEN_POSITION_STYLES = {
+  position: "fixed",
+  top: "0",
+  left: "0",
+  width: "100%",
+  height: "100%",
+  zIndex: CUSTOM_FULLSCREEN_Z_INDEX,
+  backgroundColor: "#ffffff",
+};
 
 // Light settings
 const AMBIENT_LIGHT_INTENSITY = 0.6;
@@ -45,7 +57,6 @@ const CONTROLS_BG_COLOR = "rgba(0, 0, 0, 0.3)";
 const CONTROLS_HOVER_COLOR = "rgba(0, 0, 0, 0.5)";
 
 let isFullscreen = false;
-let floatingControls = null;
 
 // Maze 3D rendering using Three.js
 let scene, camera, renderer;
@@ -125,9 +136,6 @@ function init3DMaze() {
   if (isTouchDevice) {
     setupTouchControls();
   }
-
-  // Create floating controls
-  floatingControls = createFloatingControls("maze3d");
 
   // Create fullscreen button
   const fullscreenBtn = document.createElement("button");
@@ -377,10 +385,61 @@ function animate() {
 // Update function to show celebration screen
 function showCelebration() {
   // Only show celebration once
-  if (document.getElementById("celebration").style.display === "flex") return;
+  if (document.getElementById("celebration")) {
+    document.getElementById("celebration").style.display = "flex";
+    return;
+  }
 
-  // Use the unified celebration function from controller.js
-  createCelebration();
+  // Create a completely new celebration element
+  const celebrationElement = document.createElement("div");
+  celebrationElement.id = "celebration";
+
+  // Style the celebration container
+  celebrationElement.style.position = "fixed";
+  celebrationElement.style.top = "0";
+  celebrationElement.style.left = "0";
+  celebrationElement.style.width = "100%";
+  celebrationElement.style.height = "100%";
+  celebrationElement.style.display = "flex";
+  celebrationElement.style.flexDirection = "column";
+  celebrationElement.style.justifyContent = "center";
+  celebrationElement.style.alignItems = "center";
+  celebrationElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+  celebrationElement.style.color = "#fff";
+  celebrationElement.style.zIndex = CELEBRATION_Z_INDEX;
+
+  // Create content for the celebration
+  const heading = document.createElement("h1");
+  heading.textContent = "Congratulations!";
+  heading.style.fontSize = "3rem";
+  heading.style.marginBottom = "1rem";
+
+  const message = document.createElement("p");
+  message.textContent = "You've solved the maze!";
+  message.style.fontSize = "1.5rem";
+  message.style.marginBottom = "2rem";
+
+  const newGameBtn = document.createElement("button");
+  newGameBtn.textContent = "New Game";
+  newGameBtn.style.padding = "1rem 2rem";
+  newGameBtn.style.fontSize = "1.2rem";
+  newGameBtn.style.backgroundColor = "#4CAF50";
+  newGameBtn.style.color = "white";
+  newGameBtn.style.border = "none";
+  newGameBtn.style.borderRadius = "5px";
+  newGameBtn.style.cursor = "pointer";
+  newGameBtn.addEventListener("click", () => {
+    document.body.removeChild(celebrationElement);
+    createNewMaze();
+  });
+
+  // Append elements to the celebration container
+  celebrationElement.appendChild(heading);
+  celebrationElement.appendChild(message);
+  celebrationElement.appendChild(newGameBtn);
+
+  // Append to document body (not inside the maze container)
+  document.body.appendChild(celebrationElement);
 }
 
 // Update camera position based on current angle and distance
@@ -563,45 +622,84 @@ window.Maze3D = {
   handle3DResize,
 };
 
-function createFloatingControls() {
-  floatingControls = document.createElement("div");
-  floatingControls.className = "floating-controls";
-  floatingControls.style.display = "none";
-
-  const directions = [
-    Direction.UP,
-    Direction.DOWN,
-    Direction.LEFT,
-    Direction.RIGHT,
-  ];
-  directions.forEach((dir) => {
-    const button = document.createElement("button");
-    button.className = `control-btn ${dir}`;
-    button.innerHTML = `<span class="arrow-${dir}"></span>`;
-    button.addEventListener("click", () => movePlayer(dir));
-    floatingControls.appendChild(button);
-  });
-
-  document.getElementById("maze3d").appendChild(floatingControls);
-}
-
 function toggleFullscreen() {
   const maze3dContainer = document.getElementById("maze3d");
   isFullscreen = !isFullscreen;
 
   if (isFullscreen) {
+    // Save the original styles before modifying
+    maze3dContainer.dataset.originalPosition =
+      maze3dContainer.style.position || "";
+    maze3dContainer.dataset.originalTop = maze3dContainer.style.top || "";
+    maze3dContainer.dataset.originalLeft = maze3dContainer.style.left || "";
+    maze3dContainer.dataset.originalWidth = maze3dContainer.style.width || "";
+    maze3dContainer.dataset.originalHeight = maze3dContainer.style.height || "";
+    maze3dContainer.dataset.originalZIndex = maze3dContainer.style.zIndex || "";
+    maze3dContainer.dataset.originalBgColor =
+      maze3dContainer.style.backgroundColor || "";
+
+    // Apply custom fullscreen styles
+    maze3dContainer.style.position = FULLSCREEN_POSITION_STYLES.position;
+    maze3dContainer.style.top = FULLSCREEN_POSITION_STYLES.top;
+    maze3dContainer.style.left = FULLSCREEN_POSITION_STYLES.left;
+    maze3dContainer.style.width = FULLSCREEN_POSITION_STYLES.width;
+    maze3dContainer.style.height = FULLSCREEN_POSITION_STYLES.height;
+    maze3dContainer.style.zIndex = FULLSCREEN_POSITION_STYLES.zIndex;
+    maze3dContainer.style.backgroundColor =
+      FULLSCREEN_POSITION_STYLES.backgroundColor;
+
     maze3dContainer.classList.add("fullscreen");
-    floatingControls.style.display = "grid";
-    if (maze3dContainer.requestFullscreen) {
-      maze3dContainer.requestFullscreen();
+
+    // Add a close button for better UX in custom fullscreen mode
+    if (!document.getElementById("custom-fullscreen-close")) {
+      const closeBtn = document.createElement("button");
+      closeBtn.id = "custom-fullscreen-close";
+      closeBtn.innerHTML = "✕";
+      closeBtn.style.position = "absolute";
+      closeBtn.style.top = "10px";
+      closeBtn.style.right = "10px";
+      closeBtn.style.zIndex = (CUSTOM_FULLSCREEN_Z_INDEX + 1).toString();
+      closeBtn.style.padding = "10px";
+      closeBtn.style.background = CONTROLS_BG_COLOR;
+      closeBtn.style.color = "#ffffff";
+      closeBtn.style.border = "none";
+      closeBtn.style.borderRadius = "5px";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.addEventListener("click", toggleFullscreen);
+      maze3dContainer.appendChild(closeBtn);
+    }
+
+    // Check if there's a celebration screen and make sure it's above everything
+    const celebrationElement = document.getElementById("celebration");
+    if (celebrationElement) {
+      // Remove it from its current position and re-add it to the body
+      if (celebrationElement.parentNode) {
+        celebrationElement.parentNode.removeChild(celebrationElement);
+      }
+
+      celebrationElement.style.zIndex = CELEBRATION_Z_INDEX;
+      document.body.appendChild(celebrationElement);
     }
   } else {
+    // Restore original styles
+    maze3dContainer.style.position = maze3dContainer.dataset.originalPosition;
+    maze3dContainer.style.top = maze3dContainer.dataset.originalTop;
+    maze3dContainer.style.left = maze3dContainer.dataset.originalLeft;
+    maze3dContainer.style.width = maze3dContainer.dataset.originalWidth;
+    maze3dContainer.style.height = maze3dContainer.dataset.originalHeight;
+    maze3dContainer.style.zIndex = maze3dContainer.dataset.originalZIndex;
+    maze3dContainer.style.backgroundColor =
+      maze3dContainer.dataset.originalBgColor;
+
     maze3dContainer.classList.remove("fullscreen");
-    floatingControls.style.display = "none";
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
+
+    // Remove the close button if it exists
+    const closeBtn = document.getElementById("custom-fullscreen-close");
+    if (closeBtn) {
+      closeBtn.remove();
     }
   }
 
-  handle3DResize();
+  // Force a resize to update renderer dimensions
+  setTimeout(handle3DResize, 100);
 }

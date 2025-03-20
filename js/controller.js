@@ -233,6 +233,7 @@ function createCelebration() {
 
 // Show celebration when player wins - now uses the unified function
 function showCelebration() {
+  hideDuringCelebration();
   createCelebration();
 }
 
@@ -397,27 +398,201 @@ document.addEventListener("DOMContentLoaded", () => {
       resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     }
   });
+
+  // Create static directional controls in the HTML
+  createStaticControls();
+
+  // Remove the dynamic controls creation timeout
 });
 
-function createFloatingControls(container) {
-  let dirControls = document.createElement("div");
-  dirControls.className = "floating-controls";
-  dirControls.style.display = "none";
+// Function to create static controls once at page load
+function createStaticControls() {
+  // First check if controls already exist
+  if (document.querySelector(".dir-controls")) {
+    return;
+  }
 
-  const directions = [
-    Direction.UP,
-    Direction.DOWN,
-    Direction.LEFT,
-    Direction.RIGHT,
-  ];
-  directions.forEach((dir) => {
-    const button = document.createElement("button");
-    button.className = `control-btn ${dir}`;
-    button.innerHTML = `<span class="arrow-${dir}"></span>`;
-    button.addEventListener("click", () => movePlayer(dir));
-    dirControls.appendChild(button);
+  // Create a static HTML control panel with simple div elements instead of buttons
+  const controlsHTML = `
+    <div class="dir-controls">
+      <div id="btn-up" class="dir-control btn-up">
+        <span class="arrow-up"></span>
+      </div>
+      <div id="btn-left" class="dir-control btn-left">
+        <span class="arrow-left"></span>
+      </div>
+      <div id="btn-right" class="dir-control btn-right">
+        <span class="arrow-right"></span>
+      </div>
+      <div id="btn-down" class="dir-control btn-down">
+        <span class="arrow-down"></span>
+      </div>
+    </div>
+  `;
+
+  // Append the controls to the body
+  document.body.insertAdjacentHTML("beforeend", controlsHTML);
+
+  // Add event listeners to the control divs
+  document
+    .getElementById("btn-up")
+    .addEventListener("click", () => movePlayer(Direction.UP));
+  document
+    .getElementById("btn-down")
+    .addEventListener("click", () => movePlayer(Direction.DOWN));
+  document
+    .getElementById("btn-left")
+    .addEventListener("click", () => movePlayer(Direction.LEFT));
+  document
+    .getElementById("btn-right")
+    .addEventListener("click", () => movePlayer(Direction.RIGHT));
+}
+
+// Function to hide controls during celebration
+function hideDuringCelebration() {
+  const controls = document.querySelector(".dir-controls");
+  if (controls) {
+    controls.style.display = "none";
+  }
+}
+
+// Function to show controls after celebration
+function showAfterCelebration() {
+  const controls = document.querySelector(".dir-controls");
+  if (controls) {
+    controls.style.display = "grid";
+  }
+}
+
+// Update the DOM content loaded event to simplify our controls handling
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize maze dimensions with MazeData defaults
+  const mazeElement = document.getElementById("maze");
+  const playAgainButton = document.getElementById("play-again");
+  const newGameButton = document.getElementById("new-game");
+  const modeSwitchButton = document.getElementById("mode-switch");
+  const muteButton = document.getElementById("mute-button");
+  const applySettingsButton = document.getElementById("apply-settings");
+  const widthInput = document.getElementById("maze-width");
+  const heightInput = document.getElementById("maze-height");
+
+  // Set input fields with min, max and default values
+  [widthInput, heightInput].forEach((input) => {
+    input.min = MazeData.MIN_SIZE;
+    input.max = MazeData.MAX_SIZE;
+    if (input === widthInput) {
+      input.value = MazeData.getWidth();
+    } else {
+      input.value = MazeData.getHeight();
+    }
   });
 
-  document.getElementById(container).appendChild(dirControls);
-  return dirControls;
-}
+  // Initialize game and set up event handlers
+  initGame();
+
+  // Set initial size once MazeData and Maze2D are initialized
+  setTimeout(() => {
+    // Get the cell size from Maze2D
+    const cellSize = Maze2D.getCellSize();
+    mazeElement.style.width = `${MazeData.getWidth() * cellSize}px`;
+    mazeElement.style.height = `${MazeData.getHeight() * cellSize}px`;
+  }, 100);
+
+  newGameButton.addEventListener("click", initGame);
+  playAgainButton.addEventListener("click", initGame);
+  modeSwitchButton.addEventListener("click", switchMode);
+  muteButton.addEventListener("click", toggleMute);
+
+  // Settings control
+  applySettingsButton.addEventListener("click", () => {
+    const newWidth = Math.min(
+      Math.max(
+        parseInt(widthInput.value) || MazeData.getWidth(),
+        MazeData.MIN_SIZE
+      ),
+      MazeData.MAX_SIZE
+    );
+    const newHeight = Math.min(
+      Math.max(
+        parseInt(heightInput.value) || MazeData.getHeight(),
+        MazeData.MIN_SIZE
+      ),
+      MazeData.MAX_SIZE
+    );
+
+    widthInput.value = newWidth;
+    heightInput.value = newHeight;
+
+    // First resize the maze data
+    MazeData.resizeMaze(newWidth, newHeight);
+
+    // Update current view based on mode
+    if (is3DMode) {
+      // Reset 3D view with new dimensions
+      init3DMaze();
+    } else {
+      // Resize 2D view
+      Maze2D.resizeMaze2D(newWidth, newHeight);
+    }
+
+    // Reset steps counter
+    steps = 0;
+    document.getElementById("steps").textContent = steps;
+  });
+
+  // Keyboard controls
+  document.addEventListener("keydown", (e) => {
+    if (is3DMode) {
+      // Let maze3d.js handle the movement in 3D mode
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowUp":
+      case "w":
+      case "W":
+        movePlayer(Direction.UP);
+        break;
+      case "ArrowDown":
+      case "s":
+      case "S":
+        movePlayer(Direction.DOWN);
+        break;
+      case "ArrowLeft":
+      case "a":
+      case "A":
+        movePlayer(Direction.LEFT);
+        break;
+      case "ArrowRight":
+      case "d":
+      case "D":
+        movePlayer(Direction.RIGHT);
+        break;
+    }
+  });
+
+  // Handle window resize
+  window.addEventListener("resize", () => {
+    if (is3DMode) {
+      handle3DResize();
+    } else {
+      // Also handle 2D maze resize when in 2D mode
+      resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
+    }
+  });
+
+  // Create static directional controls in the HTML
+  createStaticControls();
+
+  // Remove the dynamic controls creation timeout
+});
+
+// Update switchMode function to always show controls after switching
+const originalSwitchMode = switchMode;
+switchMode = function () {
+  originalSwitchMode();
+
+  setTimeout(() => {
+    showAfterCelebration();
+  }, 300);
+};
