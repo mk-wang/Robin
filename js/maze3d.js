@@ -537,16 +537,16 @@ function setupTouchControls() {
   // Handle touch start
   container.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
-      // Single touch - prepare for swipe or camera angle
+      // Single touch - prepare for swipe for player movement
       lastTouchY = e.touches[0].clientY;
       lastTouchX = e.touches[0].clientX;
       isSwiping = true;
-    } else if (e.touches.length === 2) {
-      // Two touches - prepare for pinch
+    } else if (e.touches.length >= 2) {
+      // Two or more touches - prepare for camera control
       isPinching = true;
       isSwiping = false;
 
-      // Calculate initial distance between two fingers
+      // Calculate initial distance between two fingers for pinch zoom
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       initialTouchDistance = Math.hypot(
@@ -563,26 +563,52 @@ function setupTouchControls() {
     // Determine if we're handling camera control or player movement
     const now = Date.now();
 
-    if (isPinching && e.touches.length === 2) {
-      // Handle pinch for camera zoom
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const currentDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
+    if (e.touches.length >= 2 || isPinching) {
+      // Multi-finger gesture - handle camera angle and zoom
+      isPinching = true;
+      isSwiping = false;
 
-      // Determine zoom direction (in or out)
-      if (initialTouchDistance > 0) {
-        const zoomChange = (currentDistance - initialTouchDistance) * 0.1;
-        cameraDistance = Math.max(
-          CAMERA_MIN_DISTANCE,
-          Math.min(CAMERA_MAX_DISTANCE, cameraDistance - zoomChange)
+      if (e.touches.length === 2) {
+        // Handle pinch for camera zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
         );
+
+        // Calculate vertical movement for camera angle
+        const touch1PrevY = lastTouchY || touch1.clientY;
+        const deltaY = (touch1.clientY + touch2.clientY) / 2 - touch1PrevY;
+
+        // Adjust camera angle based on vertical finger movement
+        if (Math.abs(deltaY) > 5) {
+          // Small threshold to avoid tiny movements
+          cameraAngle = Math.max(
+            CAMERA_MIN_ANGLE,
+            Math.min(
+              CAMERA_MAX_ANGLE,
+              cameraAngle - deltaY * CAMERA_ANGLE_SENSITIVITY * 0.5
+            )
+          );
+          lastTouchY = (touch1.clientY + touch2.clientY) / 2;
+        }
+
+        // Determine zoom direction (in or out)
+        if (initialTouchDistance > 0) {
+          const zoomChange = (currentDistance - initialTouchDistance) * 0.1;
+          cameraDistance = Math.max(
+            CAMERA_MIN_DISTANCE,
+            Math.min(CAMERA_MAX_DISTANCE, cameraDistance - zoomChange)
+          );
+          initialTouchDistance = currentDistance;
+        }
+
         updateCameraPosition();
-        initialTouchDistance = currentDistance;
       }
     } else if (isSwiping && e.touches.length === 1) {
+      // Single finger - handle player movement
+
       // Get current touch position
       const currentTouchY = e.touches[0].clientY;
       const currentTouchX = e.touches[0].clientX;
@@ -596,19 +622,8 @@ function setupTouchControls() {
         Math.abs(deltaX) > SWIPE_THRESHOLD ||
         Math.abs(deltaY) > SWIPE_THRESHOLD
       ) {
-        // Update camera angle if the movement is primarily vertical
-        if (Math.abs(deltaY) > Math.abs(deltaX)) {
-          cameraAngle = Math.max(
-            CAMERA_MIN_ANGLE,
-            Math.min(
-              CAMERA_MAX_ANGLE,
-              cameraAngle - deltaY * CAMERA_ANGLE_SENSITIVITY
-            )
-          );
-          updateCameraPosition();
-        }
-        // Handle horizontal/diagonal movements for player control (with cooldown)
-        else if (now - lastMoveTime > MOVE_COOLDOWN) {
+        // Handle swipe for player movement with cooldown
+        if (now - lastMoveTime > MOVE_COOLDOWN) {
           const direction = getSwipeDirection(
             lastTouchX,
             lastTouchY,
@@ -617,11 +632,6 @@ function setupTouchControls() {
           );
           movePlayer(direction);
           lastMoveTime = now;
-
-          // Reset last positions to avoid multiple moves from a single swipe
-          lastTouchX = currentTouchX;
-          lastTouchY = currentTouchY;
-          return;
         }
       }
 
@@ -635,14 +645,20 @@ function setupTouchControls() {
 
   // Handle touch end
   container.addEventListener("touchend", (e) => {
-    // Reset flags
-    isPinching = false;
+    // Reset flags based on remaining touches
+    if (e.touches.length < 2) {
+      isPinching = false;
+      initialTouchDistance = 0;
+    }
+
     if (e.touches.length === 0) {
       isSwiping = false;
     } else if (e.touches.length === 1) {
       // If one finger is still down, update for possible continued swiping
       lastTouchY = e.touches[0].clientY;
       lastTouchX = e.touches[0].clientX;
+      isSwiping = true;
+      isPinching = false;
     }
 
     e.preventDefault();

@@ -1,7 +1,7 @@
 // Maze data and state
 let maze = [];
-let mazeWidth = 2; // Default width
-let mazeHeight = 2; // Default height
+let mazeWidth = 8; // Default width
+let mazeHeight = 8; // Default height
 let playerPosition = { x: 0, y: 0 };
 let finishPosition = { x: 7, y: 7 };
 

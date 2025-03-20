@@ -302,6 +302,32 @@ function toggleMute() {
   muteButton.textContent = isMuted ? "🔇" : "🔊";
 }
 
+// Update function to show a simplified hint without mode indicators
+function setupTouchModeIndicators() {
+  if (!isTouchDevice) return;
+
+  // Add a hint about touch controls when 3D mode is first activated
+  document.getElementById("mode-switch").addEventListener("click", () => {
+    if (is3DMode) {
+      // Show hint about multi-finger gesture for camera control
+      const maze3d = document.getElementById("maze3d");
+      const hint = document.createElement("div");
+      hint.className = "camera-hint";
+      hint.textContent =
+        "Use single finger to move • Use two fingers to adjust camera";
+      maze3d.appendChild(hint);
+
+      // Remove hint after 5 seconds
+      setTimeout(() => {
+        if (hint.parentNode) {
+          hint.style.opacity = "0";
+          setTimeout(() => hint.remove(), 1000);
+        }
+      }, 5000);
+    }
+  });
+}
+
 // Setup event listeners
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize maze dimensions with MazeData defaults
@@ -481,6 +507,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 1000);
     }, 5000);
   }
+
+  // Set up touch mode indicators for 3D view
+  setupTouchModeIndicators();
 });
 
 // Add event listeners to the control divs
@@ -804,6 +833,9 @@ function setupSwipeControls() {
   mazeElement.addEventListener(
     "touchstart",
     function (e) {
+      // Only handle touches in 2D mode
+      if (is3DMode) return;
+
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       e.preventDefault();
@@ -814,6 +846,9 @@ function setupSwipeControls() {
   mazeElement.addEventListener(
     "touchmove",
     function (e) {
+      // Only handle touches in 2D mode
+      if (is3DMode) return;
+
       if (!startX || !startY) return;
       e.preventDefault();
     },
@@ -821,6 +856,9 @@ function setupSwipeControls() {
   );
 
   mazeElement.addEventListener("touchend", function (e) {
+    // Only handle touches in 2D mode
+    if (is3DMode) return;
+
     if (!startX || !startY) return;
 
     const now = Date.now();

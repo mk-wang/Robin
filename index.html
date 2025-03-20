@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <!-- Add Apple mobile web app capability for better fullscreen experience -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -45,8 +45,10 @@
         <div id="player"></div>
         <div id="finish"></div>
         <div id="maze3d" class="hidden">
-          <!-- Add camera control hint for touch devices -->
-          <div id="camera-hint" class="camera-hint">Swipe to look around</div>
+          <!-- Update camera control hint for touch devices -->
+          <div id="camera-hint" class="camera-hint">
+            Single finger: Move player • Two fingers: Control camera
+          </div>
         </div>
         <div class="dir-controls">
           <div class="dir-control btn-up"><div class="arrow-up"></div></div>
