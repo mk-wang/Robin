@@ -43,6 +43,7 @@ const AUDIO_URLS = {
 let steps = 0;
 let isMuted = false;
 let isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 const default3D = true;
 let is3DMode = false;
@@ -89,6 +90,21 @@ function initGame() {
   // Clear any existing confetti
   const confettiElements = document.querySelectorAll(".confetti");
   confettiElements.forEach((el) => el.remove());
+
+  // Make direction controls visible after starting a new game
+  const dirControls = document.querySelector(".dir-controls");
+  if (dirControls) {
+    dirControls.style.display = "grid";
+    dirControls.style.visibility = "visible";
+    dirControls.style.opacity = "1";
+    dirControls.classList.remove("ios-hidden");
+  }
+
+  // For iOS, ensure controls are visible with additional delay
+  if (isIOS) {
+    setTimeout(forceShowDirectionControls, 200);
+    setTimeout(forceShowDirectionControls, 500); // Additional call for redundancy
+  }
 
   if (!gameInited && default3D && !is3DMode) {
     switchMode();
@@ -273,6 +289,10 @@ function switchMode() {
     Maze2D.resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     switchTo2DView();
   }
+
+  setTimeout(() => {
+    showAfterCelebration();
+  }, 300);
 }
 
 // Handle mute/unmute
@@ -317,7 +337,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 100);
 
   newGameButton.addEventListener("click", initGame);
-  playAgainButton.addEventListener("click", initGame);
+  playAgainButton.addEventListener("click", () => {
+    initGame();
+
+    // Special handling for iOS devices
+    if (isIOS) {
+      // Force a delay before showing controls on iOS
+      setTimeout(() => {
+        showAfterCelebration();
+
+        // Additional timeout to ensure controls are visible
+        setTimeout(() => {
+          const controls = document.querySelector(".dir-controls");
+          if (controls) {
+            controls.style.display = "grid";
+            controls.style.visibility = "visible";
+            controls.style.opacity = "1";
+          }
+        }, 300);
+      }, 100);
+    } else {
+      // Standard behavior for non-iOS
+      showAfterCelebration();
+    }
+  });
   modeSwitchButton.addEventListener("click", switchMode);
   muteButton.addEventListener("click", toggleMute);
 
@@ -357,6 +400,27 @@ document.addEventListener("DOMContentLoaded", () => {
     steps = 0;
     document.getElementById("steps").textContent = steps;
   });
+
+  // iOS specific handling
+  if (isIOS) {
+    // Add viewport scroll fix for iOS
+    window.addEventListener("resize", function () {
+      if (document.activeElement.tagName === "INPUT") {
+        document.activeElement.scrollIntoView();
+      }
+    });
+
+    // Prevent iOS bounce scroll effect in fullscreen
+    document.body.addEventListener(
+      "touchmove",
+      function (e) {
+        if (document.body.classList.contains("ios-body-fullscreen")) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+  }
 
   // Keyboard controls
   document.addEventListener("keydown", (e) => {
@@ -398,6 +462,25 @@ document.addEventListener("DOMContentLoaded", () => {
       resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     }
   });
+
+  // Set up swipe controls for touch devices
+  if (isTouchDevice) {
+    setupSwipeControls();
+
+    // Add instructional hint for touch controls
+    const controlHint = document.createElement("div");
+    controlHint.className = "touch-hint";
+    controlHint.textContent = "Swipe to move • Pinch to zoom camera";
+    document.querySelector(".maze-container").appendChild(controlHint);
+
+    // Hide the hint after a few seconds
+    setTimeout(() => {
+      controlHint.classList.add("fade-out");
+      setTimeout(() => {
+        controlHint.remove();
+      }, 1000);
+    }, 5000);
+  }
 });
 
 // Add event listeners to the control divs
@@ -419,23 +502,45 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Function to hide controls during celebration
+// Improved function to hide controls during celebration - with iOS handling
 function hideDuringCelebration() {
   const controls = document.querySelector(".dir-controls");
   if (controls) {
-    controls.style.display = "none";
+    // For iOS, use a different approach to hiding
+    if (isIOS) {
+      controls.style.visibility = "hidden";
+      controls.style.opacity = "0";
+    } else {
+      controls.style.display = "none";
+    }
   }
 }
 
-// Function to show controls after celebration
+// More robust function to show controls after celebration
 function showAfterCelebration() {
   const controls = document.querySelector(".dir-controls");
   if (controls) {
+    // First ensure the element is in the DOM with display:grid
     controls.style.display = "grid";
+
+    // Remove any iOS-specific hidden class
+    controls.classList.remove("ios-hidden");
+
+    // For iOS we need to explicitly set these properties
+    if (isIOS) {
+      controls.style.visibility = "visible";
+      controls.style.opacity = "1";
+
+      // Force layout recalculation
+      void controls.offsetHeight;
+
+      // Additional property to ensure visibility on iOS
+      controls.style.pointerEvents = "auto";
+    }
   }
 }
 
-// Update the DOM content loaded event to simplify our controls handling
+// Enhanced play again button handler to ensure controls are visible
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize maze dimensions with MazeData defaults
   const mazeElement = document.getElementById("maze");
@@ -470,7 +575,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 100);
 
   newGameButton.addEventListener("click", initGame);
-  playAgainButton.addEventListener("click", initGame);
+  playAgainButton.addEventListener("click", () => {
+    initGame();
+
+    // Special handling for iOS devices
+    if (isIOS) {
+      // Force a delay before showing controls on iOS
+      setTimeout(() => {
+        showAfterCelebration();
+
+        // Additional timeout to ensure controls are visible
+        setTimeout(() => {
+          const controls = document.querySelector(".dir-controls");
+          if (controls) {
+            controls.style.display = "grid";
+            controls.style.visibility = "visible";
+            controls.style.opacity = "1";
+          }
+        }, 300);
+      }, 100);
+    } else {
+      // Standard behavior for non-iOS
+      showAfterCelebration();
+    }
+  });
   modeSwitchButton.addEventListener("click", switchMode);
   muteButton.addEventListener("click", toggleMute);
 
@@ -510,6 +638,27 @@ document.addEventListener("DOMContentLoaded", () => {
     steps = 0;
     document.getElementById("steps").textContent = steps;
   });
+
+  // iOS specific handling
+  if (isIOS) {
+    // Add viewport scroll fix for iOS
+    window.addEventListener("resize", function () {
+      if (document.activeElement.tagName === "INPUT") {
+        document.activeElement.scrollIntoView();
+      }
+    });
+
+    // Prevent iOS bounce scroll effect in fullscreen
+    document.body.addEventListener(
+      "touchmove",
+      function (e) {
+        if (document.body.classList.contains("ios-body-fullscreen")) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+  }
 
   // Keyboard controls
   document.addEventListener("keydown", (e) => {
@@ -551,14 +700,173 @@ document.addEventListener("DOMContentLoaded", () => {
       resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     }
   });
+
+  // Get the play again button
+  const playAgainButtonElement = document.getElementById("play-again");
+
+  // Remove any existing event listeners
+  playAgainButtonElement.replaceWith(playAgainButtonElement.cloneNode(true));
+
+  // Get the fresh button
+  const newPlayAgainButton = document.getElementById("play-again");
+
+  // Add our enhanced event listener
+  newPlayAgainButton.addEventListener("click", function (e) {
+    console.log("Play Again clicked");
+
+    // Start a new game
+    initGame();
+
+    // Force show controls with multiple approaches for redundancy
+    setTimeout(() => {
+      const controls = document.querySelector(".dir-controls");
+      if (controls) {
+        controls.style.display = "grid";
+        controls.classList.remove("ios-hidden");
+        controls.style.visibility = "visible";
+        controls.style.opacity = "1";
+        controls.style.pointerEvents = "auto";
+      }
+
+      // Force a DOM update
+      forceShowDirectionControls();
+
+      // Call again after a delay to ensure it works consistently
+      setTimeout(forceShowDirectionControls, 300);
+    }, 100);
+  });
 });
 
-// Update switchMode function to always show controls after switching
-const originalSwitchMode = switchMode;
-switchMode = function () {
-  originalSwitchMode();
-
+// Add a global handler for celebration closing that always shows controls
+window.showControlsAfterCelebration = function () {
+  console.log("Showing controls after celebration");
   setTimeout(() => {
-    showAfterCelebration();
-  }, 300);
+    const controls = document.querySelector(".dir-controls");
+    if (controls) {
+      controls.style.display = "grid";
+      controls.classList.remove("ios-hidden");
+      controls.style.visibility = "visible";
+      controls.style.opacity = "1";
+
+      // For iOS devices, add extra properties
+      if (isIOS) {
+        controls.style.pointerEvents = "auto";
+
+        // Force refresh the controls by temporarily toggling a class
+        controls.classList.add("force-visible");
+        setTimeout(() => controls.classList.remove("force-visible"), 50);
+      }
+    }
+  }, 50);
 };
+
+// Improved force show direction controls function
+function forceShowDirectionControls() {
+  const controls = document.querySelector(".dir-controls");
+  if (controls) {
+    // Make it visible first
+    controls.style.display = "grid";
+    controls.style.visibility = "visible";
+    controls.style.opacity = "1";
+    controls.classList.remove("ios-hidden");
+
+    // For iOS, add additional properties
+    if (isIOS) {
+      controls.style.pointerEvents = "auto";
+      controls.style.transform = "translateZ(0)";
+      controls.style.webkitTransform = "translateZ(0)";
+
+      // Force DOM reflow
+      void controls.offsetHeight;
+    }
+  }
+}
+
+// At the end of the file, add a global event listener for iOS fullscreen issues
+if (isIOS) {
+  // After any touch event, ensure controls are visible
+  document.addEventListener("touchend", function () {
+    if (document.getElementById("celebration").style.display !== "flex") {
+      setTimeout(forceShowDirectionControls, 100);
+    }
+  });
+}
+
+// Add swipe gesture support for 2D mode
+function setupSwipeControls() {
+  const mazeElement = document.getElementById("maze");
+  let startX, startY;
+  const SWIPE_THRESHOLD = 30; // Minimum pixels for a swipe
+  const SWIPE_COOLDOWN = 300; // Milliseconds to wait between swipes
+  let lastSwipeTime = 0;
+
+  // Prevent default touch behavior to avoid scrolling
+  mazeElement.addEventListener(
+    "touchstart",
+    function (e) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  mazeElement.addEventListener(
+    "touchmove",
+    function (e) {
+      if (!startX || !startY) return;
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  mazeElement.addEventListener("touchend", function (e) {
+    if (!startX || !startY) return;
+
+    const now = Date.now();
+    if (now - lastSwipeTime < SWIPE_COOLDOWN) {
+      // Skip if we just processed a swipe
+      startX = null;
+      startY = null;
+      return;
+    }
+
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+
+    // Calculate deltas
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+
+    // Check if this was actually a swipe
+    if (
+      Math.abs(diffX) < SWIPE_THRESHOLD &&
+      Math.abs(diffY) < SWIPE_THRESHOLD
+    ) {
+      startX = null;
+      startY = null;
+      return;
+    }
+
+    // Determine swipe direction
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      // Horizontal swipe
+      if (diffX > 0) {
+        movePlayer(Direction.RIGHT);
+      } else {
+        movePlayer(Direction.LEFT);
+      }
+    } else {
+      // Vertical swipe
+      if (diffY > 0) {
+        movePlayer(Direction.DOWN);
+      } else {
+        movePlayer(Direction.UP);
+      }
+    }
+
+    lastSwipeTime = now;
+    startX = null;
+    startY = null;
+  });
+}

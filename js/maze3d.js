@@ -35,6 +35,11 @@ const FULLSCREEN_POSITION_STYLES = {
   backgroundColor: "#ffffff",
 };
 
+// Updated constants for iOS devices
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const IOS_FULLSCREEN_CLASS = "ios-fullscreen";
+const FULLSCREEN_BUTTON_SIZE = IS_IOS ? "50px" : "40px"; // Larger button for iOS
+
 // Light settings
 const AMBIENT_LIGHT_INTENSITY = 0.6;
 const DIRECTIONAL_LIGHT_INTENSITY = 0.8;
@@ -127,8 +132,6 @@ function init3DMaze() {
   // Create the maze in 3D
   create3DMaze();
 
-  // 移除了原来的地面创建代码，因为现在地面是在create3DMaze中创建的
-
   // Add mouse controls
   setupMouseControls();
 
@@ -137,12 +140,8 @@ function init3DMaze() {
     setupTouchControls();
   }
 
-  // Create fullscreen button
-  const fullscreenBtn = document.createElement("button");
-  fullscreenBtn.className = "fullscreen-btn";
-  fullscreenBtn.innerHTML = "⛶";
-  fullscreenBtn.addEventListener("click", toggleFullscreen);
-  container.appendChild(fullscreenBtn);
+  // Create fullscreen button using the new function
+  createFullscreenButton(container);
 
   // Force camera and renderer update after initialization
   handle3DResize();
@@ -382,11 +381,22 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// Update function to show celebration screen
+// Update function to show celebration screen with improved control handling
 function showCelebration() {
   // Only show celebration once
   if (document.getElementById("celebration")) {
     document.getElementById("celebration").style.display = "flex";
+
+    // Hide direction controls for iOS - use the appropriate method
+    if (IS_IOS) {
+      const controls = document.querySelector(".dir-controls");
+      if (controls) {
+        controls.style.visibility = "hidden";
+        controls.style.opacity = "0";
+        controls.classList.add("ios-hidden");
+      }
+    }
+
     return;
   }
 
@@ -421,6 +431,7 @@ function showCelebration() {
 
   const newGameBtn = document.createElement("button");
   newGameBtn.textContent = "New Game";
+  newGameBtn.id = "play-again"; // Use id="play-again" for consistency
   newGameBtn.style.padding = "1rem 2rem";
   newGameBtn.style.fontSize = "1.2rem";
   newGameBtn.style.backgroundColor = "#4CAF50";
@@ -428,9 +439,27 @@ function showCelebration() {
   newGameBtn.style.border = "none";
   newGameBtn.style.borderRadius = "5px";
   newGameBtn.style.cursor = "pointer";
-  newGameBtn.addEventListener("click", () => {
+
+  // Enhanced click/touch handling for iOS
+  newGameBtn.addEventListener("click", function (e) {
     document.body.removeChild(celebrationElement);
     createNewMaze();
+
+    // Call the global handler to show controls
+    if (window.showControlsAfterCelebration) {
+      window.showControlsAfterCelebration();
+    }
+
+    // Additional direct show controls for redundancy
+    setTimeout(() => {
+      const controls = document.querySelector(".dir-controls");
+      if (controls) {
+        controls.style.display = "grid";
+        controls.style.visibility = "visible";
+        controls.style.opacity = "1";
+        controls.classList.remove("ios-hidden");
+      }
+    }, 100);
   });
 
   // Append elements to the celebration container
@@ -440,6 +469,16 @@ function showCelebration() {
 
   // Append to document body (not inside the maze container)
   document.body.appendChild(celebrationElement);
+
+  // Hide direction controls using the appropriate method for iOS
+  if (IS_IOS) {
+    const controls = document.querySelector(".dir-controls");
+    if (controls) {
+      controls.style.visibility = "hidden";
+      controls.style.opacity = "0";
+      controls.classList.add("ios-hidden");
+    }
+  }
 }
 
 // Update camera position based on current angle and distance
@@ -470,30 +509,149 @@ function handle3DResize() {
   }
 }
 
-// Setup touch controls for mobile devices
+// Setup touch controls for mobile devices with enhanced gestures
 function setupTouchControls() {
   const container = document.getElementById("maze3d");
   let lastTouchY = 0;
+  let lastTouchX = 0;
+  let initialTouchDistance = 0;
+  let isSwiping = false;
+  let isPinching = false;
+  let lastMoveTime = 0;
+  const SWIPE_THRESHOLD = 10; // Minimum pixels for a swipe
+  const MOVE_COOLDOWN = 250; // Milliseconds to wait between moves
 
+  // Detect swipe direction
+  function getSwipeDirection(startX, startY, endX, endY) {
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+
+    // Check if horizontal or vertical swipe based on which delta is larger
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      return deltaX > 0 ? Direction.RIGHT : Direction.LEFT;
+    } else {
+      return deltaY > 0 ? Direction.DOWN : Direction.UP;
+    }
+  }
+
+  // Handle touch start
   container.addEventListener("touchstart", (e) => {
-    lastTouchY = e.touches[0].clientY;
+    if (e.touches.length === 1) {
+      // Single touch - prepare for swipe or camera angle
+      lastTouchY = e.touches[0].clientY;
+      lastTouchX = e.touches[0].clientX;
+      isSwiping = true;
+    } else if (e.touches.length === 2) {
+      // Two touches - prepare for pinch
+      isPinching = true;
+      isSwiping = false;
+
+      // Calculate initial distance between two fingers
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      initialTouchDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+    }
+
     e.preventDefault();
   });
 
+  // Handle touch move
   container.addEventListener("touchmove", (e) => {
-    const currentTouchY = e.touches[0].clientY;
-    const deltaY = currentTouchY - lastTouchY;
+    // Determine if we're handling camera control or player movement
+    const now = Date.now();
 
-    cameraAngle = Math.max(
-      CAMERA_MIN_ANGLE,
-      Math.min(
-        CAMERA_MAX_ANGLE,
-        cameraAngle - deltaY * CAMERA_ANGLE_SENSITIVITY
-      )
-    );
+    if (isPinching && e.touches.length === 2) {
+      // Handle pinch for camera zoom
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
 
-    updateCameraPosition();
-    lastTouchY = currentTouchY;
+      // Determine zoom direction (in or out)
+      if (initialTouchDistance > 0) {
+        const zoomChange = (currentDistance - initialTouchDistance) * 0.1;
+        cameraDistance = Math.max(
+          CAMERA_MIN_DISTANCE,
+          Math.min(CAMERA_MAX_DISTANCE, cameraDistance - zoomChange)
+        );
+        updateCameraPosition();
+        initialTouchDistance = currentDistance;
+      }
+    } else if (isSwiping && e.touches.length === 1) {
+      // Get current touch position
+      const currentTouchY = e.touches[0].clientY;
+      const currentTouchX = e.touches[0].clientX;
+
+      // Calculate deltas
+      const deltaY = currentTouchY - lastTouchY;
+      const deltaX = currentTouchX - lastTouchX;
+
+      // Check if this is a large enough movement to be a swipe
+      if (
+        Math.abs(deltaX) > SWIPE_THRESHOLD ||
+        Math.abs(deltaY) > SWIPE_THRESHOLD
+      ) {
+        // Update camera angle if the movement is primarily vertical
+        if (Math.abs(deltaY) > Math.abs(deltaX)) {
+          cameraAngle = Math.max(
+            CAMERA_MIN_ANGLE,
+            Math.min(
+              CAMERA_MAX_ANGLE,
+              cameraAngle - deltaY * CAMERA_ANGLE_SENSITIVITY
+            )
+          );
+          updateCameraPosition();
+        }
+        // Handle horizontal/diagonal movements for player control (with cooldown)
+        else if (now - lastMoveTime > MOVE_COOLDOWN) {
+          const direction = getSwipeDirection(
+            lastTouchX,
+            lastTouchY,
+            currentTouchX,
+            currentTouchY
+          );
+          movePlayer(direction);
+          lastMoveTime = now;
+
+          // Reset last positions to avoid multiple moves from a single swipe
+          lastTouchX = currentTouchX;
+          lastTouchY = currentTouchY;
+          return;
+        }
+      }
+
+      // Update last positions for next calculation
+      lastTouchY = currentTouchY;
+      lastTouchX = currentTouchX;
+    }
+
+    e.preventDefault();
+  });
+
+  // Handle touch end
+  container.addEventListener("touchend", (e) => {
+    // Reset flags
+    isPinching = false;
+    if (e.touches.length === 0) {
+      isSwiping = false;
+    } else if (e.touches.length === 1) {
+      // If one finger is still down, update for possible continued swiping
+      lastTouchY = e.touches[0].clientY;
+      lastTouchX = e.touches[0].clientX;
+    }
+
+    e.preventDefault();
+  });
+
+  // Handle touch cancel
+  container.addEventListener("touchcancel", (e) => {
+    isPinching = false;
+    isSwiping = false;
     e.preventDefault();
   });
 }
@@ -622,8 +780,52 @@ window.Maze3D = {
   handle3DResize,
 };
 
+// Create fullscreen button
+function createFullscreenButton(container) {
+  // Remove any existing button first
+  const existingBtn = container.querySelector(".fullscreen-btn");
+  if (existingBtn) {
+    existingBtn.remove();
+  }
+
+  const fullscreenBtn = document.createElement("button");
+  fullscreenBtn.className = "fullscreen-btn";
+  fullscreenBtn.innerHTML = "⛶";
+  fullscreenBtn.style.width = FULLSCREEN_BUTTON_SIZE;
+  fullscreenBtn.style.height = FULLSCREEN_BUTTON_SIZE;
+
+  // Add both click and touchend events for better iOS compatibility
+  fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+  // Special handling for iOS touch events
+  if (IS_IOS) {
+    fullscreenBtn.addEventListener(
+      "touchstart",
+      function (e) {
+        e.preventDefault(); // Prevent ghost clicks
+      },
+      { passive: false }
+    );
+
+    fullscreenBtn.addEventListener(
+      "touchend",
+      function (e) {
+        e.preventDefault();
+        toggleFullscreen();
+      },
+      { passive: false }
+    );
+  }
+
+  container.appendChild(fullscreenBtn);
+  return fullscreenBtn;
+}
+
+// Updated toggleFullscreen function with iOS handling
 function toggleFullscreen() {
   const maze3dContainer = document.getElementById("maze3d");
+
+  // Toggle the fullscreen state
   isFullscreen = !isFullscreen;
 
   if (isFullscreen) {
@@ -650,6 +852,12 @@ function toggleFullscreen() {
 
     maze3dContainer.classList.add("fullscreen");
 
+    // Add iOS specific class if on iOS
+    if (IS_IOS) {
+      maze3dContainer.classList.add(IOS_FULLSCREEN_CLASS);
+      document.body.classList.add("ios-body-fullscreen");
+    }
+
     // Add a close button for better UX in custom fullscreen mode
     if (!document.getElementById("custom-fullscreen-close")) {
       const closeBtn = document.createElement("button");
@@ -665,7 +873,29 @@ function toggleFullscreen() {
       closeBtn.style.border = "none";
       closeBtn.style.borderRadius = "5px";
       closeBtn.style.cursor = "pointer";
-      closeBtn.addEventListener("click", toggleFullscreen);
+
+      // Add touch events for iOS compatibility
+      if (IS_IOS) {
+        closeBtn.addEventListener(
+          "touchstart",
+          function (e) {
+            e.preventDefault();
+          },
+          { passive: false }
+        );
+
+        closeBtn.addEventListener(
+          "touchend",
+          function (e) {
+            e.preventDefault();
+            toggleFullscreen();
+          },
+          { passive: false }
+        );
+      } else {
+        closeBtn.addEventListener("click", toggleFullscreen);
+      }
+
       maze3dContainer.appendChild(closeBtn);
     }
 
@@ -693,6 +923,12 @@ function toggleFullscreen() {
 
     maze3dContainer.classList.remove("fullscreen");
 
+    // Remove iOS specific classes
+    if (IS_IOS) {
+      maze3dContainer.classList.remove(IOS_FULLSCREEN_CLASS);
+      document.body.classList.remove("ios-body-fullscreen");
+    }
+
     // Remove the close button if it exists
     const closeBtn = document.getElementById("custom-fullscreen-close");
     if (closeBtn) {
@@ -700,6 +936,16 @@ function toggleFullscreen() {
     }
   }
 
+  // iOS needs a small delay for style recalculation
+  const resizeDelay = IS_IOS ? 300 : 100;
+
   // Force a resize to update renderer dimensions
-  setTimeout(handle3DResize, 100);
+  setTimeout(handle3DResize, resizeDelay);
+
+  // Special iOS Safari scroll position fix
+  if (IS_IOS) {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 50);
+  }
 }

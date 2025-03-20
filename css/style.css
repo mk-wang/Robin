@@ -51,6 +51,12 @@ h1 {
   width: 300px;
   height: 300px;
   margin: 0 auto;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 #maze {
@@ -131,6 +137,9 @@ button:active {
   justify-content: center;
   align-items: center;
   z-index: 2000; /* Explicitly set high z-index for celebration */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .celebration-content {
@@ -375,6 +384,39 @@ camera-button:active {
   }
 }
 
+/* Touch hint styles */
+.touch-hint {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: 100;
+  opacity: 0.9;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fadeIn 0.5s forwards;
+  transition: opacity 1s ease;
+}
+
+.touch-hint.fade-out {
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
 /* Device-specific adjustments */
 @media (max-width: 768px) {
   .game-container {
@@ -539,29 +581,40 @@ camera-button:active {
 /* Direction Controls */
 .dir-controls {
   position: fixed;
-  bottom: 40px;
-  right: 40px;
+  bottom: 20px; /* Reduced from 40px to keep controls higher from the bottom */
+  right: 20px; /* Reduced from 40px to take less horizontal space */
   z-index: 1500;
   display: grid;
   grid-template-areas:
     ". up ."
     "left . right"
     ". down .";
-  grid-gap: 10px;
-  width: 150px;
-  height: 150px;
+  grid-gap: 8px; /* Reduced from 10px to make the controls more compact */
+  width: 130px; /* Reduced from 150px */
+  height: 130px; /* Reduced from 150px */
+  transition: opacity 0.3s ease;
+  visibility: visible;
+  opacity: 1;
 }
 
 .dir-control {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 42px; /* Reduced from 50px */
+  height: 42px; /* Reduced from 50px */
   cursor: pointer;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Add a force-visible class that ensures visibility */
+.dir-controls.force-visible {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1600 !important;
 }
 
 .dir-control:hover {
@@ -603,4 +656,207 @@ camera-button:active {
 }
 .arrow-left {
   transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+/* iOS specific fullscreen handling */
+.ios-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.ios-body-fullscreen {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Make fullscreen button more touchable on iOS */
+.fullscreen-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5); /* Darker background for better visibility */
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 999; /* Lower than celebration (2000) */
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
+  touch-action: manipulation; /* Improves touch handling */
+}
+
+/* iOS specific fullscreen button */
+@supports (-webkit-touch-callout: none) {
+  .fullscreen-btn {
+    width: 50px; /* Larger touch target for iOS */
+    height: 50px;
+    font-size: 24px;
+    padding: 10px;
+  }
+
+  #custom-fullscreen-close {
+    width: 50px;
+    height: 50px;
+    padding: 12px !important;
+  }
+}
+
+/* iOS specific controls handling */
+@supports (-webkit-touch-callout: none) {
+  .dir-controls {
+    /* Better visibility handling for iOS */
+    visibility: visible !important;
+    opacity: 1 !important;
+    /* Hardware acceleration to prevent issues */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+    /* Increase z-index for iOS */
+    z-index: 1800;
+    /* Ensure touch events work properly */
+    pointer-events: auto;
+    /* Better positioning for iOS devices */
+    bottom: 15px; /* Even higher position for iOS */
+    /* Adjust sizing for iOS */
+    width: 120px;
+    height: 120px;
+    grid-gap: 6px;
+  }
+
+  /* Only use this class to explicitly hide on iOS */
+  .dir-controls.ios-hidden {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Make the touch targets better sized for iOS */
+  .dir-control {
+    width: 42px; /* Reduced from 70px */
+    height: 42px; /* Reduced from 70px */
+    -webkit-tap-highlight-color: transparent;
+    /* Improve touch area without making visual size larger */
+    position: relative;
+  }
+
+  /* Create a touch area larger than the visual element */
+  .dir-control::after {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    z-index: -1;
+  }
+
+  /* Adjust arrow sizes for smaller controls */
+  .dir-control [class^="arrow-"] {
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 12px solid white;
+  }
+
+  /* Make Play Again button work better on iOS */
+  #play-again {
+    width: 180px; /* Slightly reduced */
+    height: 60px; /* Slightly reduced */
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    position: relative;
+    z-index: 2100;
+  }
+
+  /* Touch hint for iOS devices */
+  .touch-hint {
+    bottom: 150px;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 375px) {
+  /* iPhone SE and similar */
+  .dir-controls {
+    bottom: 10px;
+    right: 10px;
+    width: 110px;
+    height: 110px;
+    grid-gap: 5px;
+  }
+
+  .dir-control {
+    width: 38px;
+    height: 38px;
+  }
+
+  [class^="arrow-"] {
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 10px solid white;
+  }
+}
+
+@media (min-height: 700px) {
+  /* Taller screens can have slightly larger controls */
+  .dir-controls {
+    bottom: 30px;
+  }
+}
+
+/* Adjustments for iPhone X and newer with bottom safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .dir-controls {
+    bottom: calc(15px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Adjustments for landscape mode */
+@media (orientation: landscape) and (max-height: 450px) {
+  .dir-controls {
+    bottom: 5px;
+    right: 5px;
+    width: 100px;
+    height: 100px;
+    grid-gap: 4px;
+  }
+
+  .dir-control {
+    width: 32px;
+    height: 32px;
+  }
+
+  [class^="arrow-"] {
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 9px solid white;
+  }
+}
+
+/* Adjust direction controls for better visibility with swipe gestures */
+@supports (-webkit-touch-callout: none) {
+  .dir-controls {
+    /* Make controls more transparent on iOS to avoid covering the swipe area */
+    opacity: 0.7 !important;
+  }
+
+  /* When a swipe gesture is active, make controls more transparent */
+  .swiping .dir-controls {
+    opacity: 0.4 !important;
+  }
 }

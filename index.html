@@ -4,10 +4,23 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
+    <!-- Add Apple mobile web app capability for better fullscreen experience -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <!-- No cache meta tags -->
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Birthday Maze Game</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/style.css?v=1.0.2" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
   <body>
@@ -60,6 +73,35 @@
         <button id="play-again">Play Again</button>
       </div>
     </div>
+
+    <!-- Add an iOS helper script before other scripts -->
+    <script>
+      // Helper for iOS detection
+      const isiOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+      // If on iOS, add a global document event listener to fix controls
+      if (isiOS) {
+        document.addEventListener("click", function (e) {
+          // When clicking outside celebration, ensure controls are visible
+          if (
+            e.target.id !== "celebration" &&
+            !e.target.closest("#celebration") &&
+            document.getElementById("celebration").style.display !== "flex"
+          ) {
+            // Get direction controls
+            const controls = document.querySelector(".dir-controls");
+            if (controls) {
+              controls.style.display = "grid";
+              controls.style.visibility = "visible";
+              controls.style.opacity = "1";
+              controls.classList.remove("ios-hidden");
+            }
+          }
+        });
+      }
+    </script>
+
     <script src="js/mazeGenerator.js"></script>
     <script src="js/maze2d.js"></script>
     <script src="js/maze3d.js"></script>
