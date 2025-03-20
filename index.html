@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Birthday Maze Game</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
   <body>
@@ -15,6 +15,13 @@
       <div class="header">
         <h1>Happy Birthday Maze Game!</h1>
         <div class="score">Steps: <span id="steps">0</span></div>
+        <div class="settings">
+          <label for="maze-width">Width:</label>
+          <input type="number" id="maze-width" />
+          <label for="maze-height">Height:</label>
+          <input type="number" id="maze-height" />
+          <button id="apply-settings">Apply</button>
+        </div>
         <div class="mode-toggle">
           <button id="mode-switch">2D Mode</button>
           <button id="mute-button">🔊</button>
@@ -30,12 +37,6 @@
         </div>
       </div>
       <div class="controls">
-        <button id="up">⬆️</button>
-        <div class="horizontal-controls">
-          <button id="left">⬅️</button>
-          <button id="right">➡️</button>
-        </div>
-        <button id="down">⬇️</button>
         <button id="new-game">New Game</button>
       </div>
     </div>
@@ -47,6 +48,7 @@
         <button id="play-again">Play Again</button>
       </div>
     </div>
+    <script src="js/mazeGenerator.js"></script>
     <script src="js/maze2d.js"></script>
     <script src="js/maze3d.js"></script>
     <script src="js/controller.js"></script>
