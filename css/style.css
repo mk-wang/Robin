@@ -539,8 +539,8 @@ camera-button:active {
 /* Direction Controls */
 .dir-controls {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 40px;
+  right: 40px;
   z-index: 1500;
   display: grid;
   grid-template-areas:
@@ -557,48 +557,50 @@ camera-button:active {
   width: 50px;
   height: 50px;
   cursor: pointer;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dir-control:hover {
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .btn-up {
   grid-area: up;
 }
-
 .btn-left {
   grid-area: left;
 }
-
 .btn-right {
   grid-area: right;
+}
+.btn-down {
+  grid-area: down;
+}
 
-  .btn-down {
-    grid-area: down;
-  }
+[class^="arrow-"] {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 15px solid white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
 
-  /* Simple arrow styles */
-  [class^="arrow-"] {
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-bottom: 20px solid rgba(108, 92, 231, 0.8);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-  }
-
-  .arrow-up {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-
-  .arrow-right {
-    transform: translate(-50%, -50%) rotate(90deg);
-  }
-
-  .arrow-down {
-    transform: translate(-50%, -50%) rotate(180deg);
-  }
-
-  .arrow-left {
-    transform: translate(-50%, -50%) rotate(-90deg);
-  }
+.arrow-up {
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+.arrow-right {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.arrow-down {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+.arrow-left {
+  transform: translate(-50%, -50%) rotate(-90deg);
 }

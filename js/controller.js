@@ -398,55 +398,26 @@ document.addEventListener("DOMContentLoaded", () => {
       resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     }
   });
-
-  // Create static directional controls in the HTML
-  createStaticControls();
-
-  // Remove the dynamic controls creation timeout
 });
 
-// Function to create static controls once at page load
-function createStaticControls() {
-  // First check if controls already exist
-  if (document.querySelector(".dir-controls")) {
-    return;
-  }
-
-  // Create a static HTML control panel with simple div elements instead of buttons
-  const controlsHTML = `
-    <div class="dir-controls">
-      <div id="btn-up" class="dir-control btn-up">
-        <span class="arrow-up"></span>
-      </div>
-      <div id="btn-left" class="dir-control btn-left">
-        <span class="arrow-left"></span>
-      </div>
-      <div id="btn-right" class="dir-control btn-right">
-        <span class="arrow-right"></span>
-      </div>
-      <div id="btn-down" class="dir-control btn-down">
-        <span class="arrow-down"></span>
-      </div>
-    </div>
-  `;
-
-  // Append the controls to the body
-  document.body.insertAdjacentHTML("beforeend", controlsHTML);
-
-  // Add event listeners to the control divs
-  document
-    .getElementById("btn-up")
-    .addEventListener("click", () => movePlayer(Direction.UP));
-  document
-    .getElementById("btn-down")
-    .addEventListener("click", () => movePlayer(Direction.DOWN));
-  document
-    .getElementById("btn-left")
-    .addEventListener("click", () => movePlayer(Direction.LEFT));
-  document
-    .getElementById("btn-right")
-    .addEventListener("click", () => movePlayer(Direction.RIGHT));
-}
+// Add event listeners to the control divs
+document.addEventListener("DOMContentLoaded", () => {
+  // Direction controls
+  const dirControls = document.querySelectorAll(".dir-control");
+  dirControls.forEach((control) => {
+    control.addEventListener("click", () => {
+      if (control.classList.contains("btn-up")) {
+        movePlayer(Direction.UP);
+      } else if (control.classList.contains("btn-down")) {
+        movePlayer(Direction.DOWN);
+      } else if (control.classList.contains("btn-left")) {
+        movePlayer(Direction.LEFT);
+      } else if (control.classList.contains("btn-right")) {
+        movePlayer(Direction.RIGHT);
+      }
+    });
+  });
+});
 
 // Function to hide controls during celebration
 function hideDuringCelebration() {
@@ -580,11 +551,6 @@ document.addEventListener("DOMContentLoaded", () => {
       resizeMaze2D(MazeData.getWidth(), MazeData.getHeight());
     }
   });
-
-  // Create static directional controls in the HTML
-  createStaticControls();
-
-  // Remove the dynamic controls creation timeout
 });
 
 // Update switchMode function to always show controls after switching
