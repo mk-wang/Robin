@@ -116,23 +116,7 @@ function init3DMaze() {
   // Create the maze in 3D
   create3DMaze();
 
-  // Create floor - use updated dimensions
-  const floorGeometry = new THREE.PlaneGeometry(
-    mazeWidth * CELL_SIZE_3D + CELL_SIZE_3D,
-    mazeHeight * CELL_SIZE_3D + CELL_SIZE_3D
-  );
-  const floorMaterial = new THREE.MeshStandardMaterial({
-    color: FLOOR_COLOR,
-    side: THREE.DoubleSide,
-  });
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = Math.PI / 2;
-  floor.position.set(
-    (mazeWidth * CELL_SIZE_3D) / 2 - CELL_SIZE_3D / 2,
-    FLOOR_OFFSET,
-    (mazeHeight * CELL_SIZE_3D) / 2 - CELL_SIZE_3D / 2
-  );
-  scene.add(floor);
+  // 移除了原来的地面创建代码，因为现在地面是在create3DMaze中创建的
 
   // Add mouse controls
   setupMouseControls();
@@ -175,6 +159,10 @@ function create3DMaze() {
   const playerPos = MazeData.getPlayerPosition();
   const finishPos = MazeData.getFinishPosition();
 
+  // 计算迷宫的中心点偏移量，使迷宫居中
+  const offsetX = -(mazeWidth * CELL_SIZE_3D) / 2;
+  const offsetZ = -(mazeHeight * CELL_SIZE_3D) / 2;
+
   // Wall materials
   const wallMaterial = new THREE.MeshStandardMaterial({
     color: WALL_COLOR,
@@ -204,9 +192,9 @@ function create3DMaze() {
         const material = y === 0 ? outerWallMaterial : wallMaterial;
         const wall = new THREE.Mesh(wallGeometry, material);
         wall.position.set(
-          x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+          x * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetX,
           WALL_HEIGHT / 2,
-          y * CELL_SIZE_3D
+          y * CELL_SIZE_3D + offsetZ
         );
         mazeGroup.add(wall);
       }
@@ -221,9 +209,9 @@ function create3DMaze() {
         const material = x === 0 ? outerWallMaterial : wallMaterial;
         const wall = new THREE.Mesh(wallGeometry, material);
         wall.position.set(
-          x * CELL_SIZE_3D,
+          x * CELL_SIZE_3D + offsetX,
           WALL_HEIGHT / 2,
-          y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+          y * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetZ
         );
         mazeGroup.add(wall);
       }
@@ -237,9 +225,9 @@ function create3DMaze() {
         );
         const wall = new THREE.Mesh(wallGeometry, outerWallMaterial);
         wall.position.set(
-          (x + 1) * CELL_SIZE_3D,
+          (x + 1) * CELL_SIZE_3D + offsetX,
           WALL_HEIGHT / 2,
-          y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+          y * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetZ
         );
         mazeGroup.add(wall);
       }
@@ -253,9 +241,9 @@ function create3DMaze() {
         );
         const wall = new THREE.Mesh(wallGeometry, outerWallMaterial);
         wall.position.set(
-          x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+          x * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetX,
           WALL_HEIGHT / 2,
-          (y + 1) * CELL_SIZE_3D
+          (y + 1) * CELL_SIZE_3D + offsetZ
         );
         mazeGroup.add(wall);
       }
@@ -269,9 +257,9 @@ function create3DMaze() {
   });
   playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
   playerMesh.position.set(
-    playerPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+    playerPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetX,
     PLAYER_HEIGHT,
-    playerPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+    playerPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetZ
   );
   mazeGroup.add(playerMesh);
 
@@ -287,9 +275,9 @@ function create3DMaze() {
   });
   finishMesh = new THREE.Mesh(finishGeometry, finishMaterial);
   finishMesh.position.set(
-    finishPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+    finishPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetX,
     FINISH_POINT_HEIGHT / 2,
-    finishPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+    finishPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetZ
   );
   mazeGroup.add(finishMesh);
 
@@ -317,12 +305,27 @@ function create3DMaze() {
   const starMaterial = new THREE.MeshStandardMaterial({ color: FINISH_COLOR });
   const star = new THREE.Mesh(starGeometry, starMaterial);
   star.position.set(
-    finishPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2,
+    finishPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetX,
     STAR_HEIGHT,
-    finishPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2
+    finishPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetZ
   );
   star.rotation.x = -Math.PI / 2;
   mazeGroup.add(star);
+
+  // 创建居中的地面 - 使用BoxGeometry代替PlaneGeometry避免旋转问题
+  const floorGeometry = new THREE.BoxGeometry(
+    mazeWidth * CELL_SIZE_3D,
+    0.5, // 地面厚度
+    mazeHeight * CELL_SIZE_3D
+  );
+  const floorMaterial = new THREE.MeshStandardMaterial({
+    color: FLOOR_COLOR,
+  });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.position.set(0, FLOOR_OFFSET, 0);
+  // 给地面添加一个标识，以便在动画循环中识别
+  floor.userData.isFloor = true;
+  mazeGroup.add(floor);
 }
 
 // Animation loop
@@ -332,17 +335,22 @@ function animate() {
   // Update player position in 3D
   if (playerMesh) {
     const playerPos = MazeData.getPlayerPosition();
+    const mazeWidth = MazeData.getWidth();
+    const mazeHeight = MazeData.getHeight();
 
-    playerMesh.position.x = playerPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2;
-    playerMesh.position.z = playerPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2;
+    // 计算偏移量，使迷宫居中
+    const offsetX = -(mazeWidth * CELL_SIZE_3D) / 2;
+    const offsetZ = -(mazeHeight * CELL_SIZE_3D) / 2;
+
+    playerMesh.position.x =
+      playerPos.x * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetX;
+    playerMesh.position.z =
+      playerPos.y * CELL_SIZE_3D + CELL_SIZE_3D / 2 + offsetZ;
 
     // Add a small bouncing animation to the player
     playerMesh.position.y =
       PLAYER_HEIGHT +
       Math.sin(Date.now() * PLAYER_BOUNCE_SPEED) * PLAYER_BOUNCE_HEIGHT;
-
-    // Update camera position to follow player without changing the viewing angle
-    updateCameraPosition();
 
     // Check if player has reached the finish point
     if (MazeData.isAtFinish()) {
@@ -352,12 +360,15 @@ function animate() {
     }
   }
 
-  // Make the finish star rotate
-  if (mazeGroup && mazeGroup.children.length > 0) {
-    const star = mazeGroup.children[mazeGroup.children.length - 1];
-    if (star) {
-      star.rotation.z += STAR_ROTATION_SPEED;
-    }
+  // 只旋转星星，不旋转地面
+  if (mazeGroup) {
+    // 查找星星并旋转它
+    mazeGroup.children.forEach((child) => {
+      // 通过几何体类型或位置来识别星星
+      if (child.geometry instanceof THREE.ExtrudeGeometry) {
+        child.rotation.z += STAR_ROTATION_SPEED;
+      }
+    });
   }
 
   renderer.render(scene, camera);
@@ -374,18 +385,12 @@ function showCelebration() {
 
 // Update camera position based on current angle and distance
 function updateCameraPosition() {
-  const mazeWidth = MazeData.getWidth();
-  const mazeHeight = MazeData.getHeight();
-
-  const centerX = (mazeWidth * CELL_SIZE_3D) / 2;
-  const centerZ = (mazeHeight * CELL_SIZE_3D) / 2;
-
-  // Always position camera at the center of maze
-  camera.position.x = centerX;
+  // 相机始终看向原点(0,0,0)，这是迷宫的中心
+  camera.position.x = 0;
   camera.position.y = Math.sin(cameraAngle) * cameraDistance;
-  camera.position.z = centerZ + Math.cos(cameraAngle) * cameraDistance;
+  camera.position.z = Math.cos(cameraAngle) * cameraDistance;
 
-  camera.lookAt(centerX, 0, centerZ);
+  camera.lookAt(0, 0, 0);
 }
 
 // Handle window resize with more robust handling
