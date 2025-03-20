@@ -28,15 +28,10 @@ const CONFETTI_COLORS = [
   "#88ff00",
 ];
 
-// Audio URLs
+// Audio URLs - Updated to use local audio files
 const AUDIO_URLS = {
-  MOVE:
-    "https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3",
-  WIN: "https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3",
-  WALL:
-    "https://assets.mixkit.co/sfx/preview/mixkit-game-show-buzz-in-3090.mp3",
-  SWITCH:
-    "https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3",
+  MOVE: "audio/move.mp3",
+  WIN: "audio/win.mp3",
 };
 
 // Game control and user input handling
@@ -52,8 +47,6 @@ let gameInited = false;
 // Audio elements
 const moveSound = new Audio(AUDIO_URLS.MOVE);
 const winSound = new Audio(AUDIO_URLS.WIN);
-const wallSound = new Audio(AUDIO_URLS.WALL);
-const switchSound = new Audio(AUDIO_URLS.SWITCH);
 
 // Add direction enum
 const Direction = {
@@ -132,7 +125,21 @@ function movePlayer(direction) {
       break;
   }
 
-  // Use MazeData's movePlayer function
+  // Calculate the new position
+  const newX = MazeData.getPlayerPosition().x + dx;
+  const newY = MazeData.getPlayerPosition().y + dy;
+
+  // Check if the new position is out of bounds (outer walls)
+  if (
+    newX < 0 ||
+    newX >= MazeData.getWidth() ||
+    newY < 0 ||
+    newY >= MazeData.getHeight()
+  ) {
+    return;
+  }
+
+  // Use MazeData's movePlayer function for inner walls
   const moveSuccessful = MazeData.movePlayer(direction, dx, dy);
 
   if (moveSuccessful) {
@@ -154,8 +161,6 @@ function movePlayer(direction) {
       showCelebration();
     }
   } else {
-    // Hit wall
-    if (!isMuted) wallSound.play();
   }
 }
 
@@ -262,7 +267,6 @@ function switchMode() {
   const modeSwitchButton = document.getElementById("mode-switch");
 
   is3DMode = !is3DMode;
-  if (!isMuted && gameInited) switchSound.play();
 
   if (is3DMode) {
     modeSwitchButton.textContent = "3D Mode";
@@ -300,32 +304,6 @@ function toggleMute() {
   const muteButton = document.getElementById("mute-button");
   isMuted = !isMuted;
   muteButton.textContent = isMuted ? "🔇" : "🔊";
-}
-
-// Update function to show a simplified hint without mode indicators
-function setupTouchModeIndicators() {
-  if (!isTouchDevice) return;
-
-  // Add a hint about touch controls when 3D mode is first activated
-  document.getElementById("mode-switch").addEventListener("click", () => {
-    if (is3DMode) {
-      // Show hint about multi-finger gesture for camera control
-      const maze3d = document.getElementById("maze3d");
-      const hint = document.createElement("div");
-      hint.className = "camera-hint";
-      hint.textContent =
-        "Use single finger to move • Use two fingers to adjust camera";
-      maze3d.appendChild(hint);
-
-      // Remove hint after 5 seconds
-      setTimeout(() => {
-        if (hint.parentNode) {
-          hint.style.opacity = "0";
-          setTimeout(() => hint.remove(), 1000);
-        }
-      }, 5000);
-    }
-  });
 }
 
 // Setup event listeners
@@ -492,24 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Set up swipe controls for touch devices
   if (isTouchDevice) {
     setupSwipeControls();
-
-    // Add instructional hint for touch controls
-    const controlHint = document.createElement("div");
-    controlHint.className = "touch-hint";
-    controlHint.textContent = "Swipe to move • Pinch to zoom camera";
-    document.querySelector(".maze-container").appendChild(controlHint);
-
-    // Hide the hint after a few seconds
-    setTimeout(() => {
-      controlHint.classList.add("fade-out");
-      setTimeout(() => {
-        controlHint.remove();
-      }, 1000);
-    }, 5000);
   }
-
-  // Set up touch mode indicators for 3D view
-  setupTouchModeIndicators();
 });
 
 // Add event listeners to the control divs
